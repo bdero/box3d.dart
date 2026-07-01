@@ -1,0 +1,23 @@
+name: box3d
+description: Dart FFI bindings for the box3d 3D rigid body physics engine.
+version: 0.0.1
+repository: https://github.com/bdero/box3d.dart
+homepage: https://github.com/bdero/box3d.dart
+issue_tracker: https://github.com/bdero/box3d.dart/issues
+
+topics:
+  - physics
+  - box3d
+  - ffi
+  - gamedev
+  - collision
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  ffi: ^2.1.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
