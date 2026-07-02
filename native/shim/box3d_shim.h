@@ -112,6 +112,39 @@ B3D_SHIM_API uint64_t b3d_shape_box(uint64_t body, float hx, float hy, float hz,
                                     float friction, float restitution,
                                     float density, int32_t is_sensor);
 
+// A capsule given the two hemisphere centers (local space) and the radius.
+B3D_SHIM_API uint64_t b3d_shape_capsule(uint64_t body, float ax, float ay,
+                                        float az, float bx, float by, float bz,
+                                        float radius, float friction,
+                                        float restitution, float density,
+                                        int32_t is_sensor);
+
+// A Y-axis cylinder centered on the body origin, tessellated into a hull
+// with `sides` faces around the axis.
+B3D_SHIM_API uint64_t b3d_shape_cylinder(uint64_t body, float half_height,
+                                         float radius, int32_t sides,
+                                         float friction, float restitution,
+                                         float density, int32_t is_sensor);
+
+// A convex hull of `point_count` points (packed xyz). Returns 0 if box3d
+// rejects the point set.
+B3D_SHIM_API uint64_t b3d_shape_convex_hull(uint64_t body, const float *points,
+                                            int32_t point_count, float friction,
+                                            float restitution, float density,
+                                            int32_t is_sensor);
+
+// --- Shape mutation --------------------------------------------------------
+
+B3D_SHIM_API void b3d_shape_set_material(uint64_t shape, float friction,
+                                         float restitution, float density);
+B3D_SHIM_API void b3d_shape_set_filter(uint64_t shape, uint64_t category,
+                                       uint64_t mask, int32_t group);
+B3D_SHIM_API void b3d_shape_enable_sensor_events(uint64_t shape,
+                                                 int32_t enabled);
+B3D_SHIM_API void b3d_shape_enable_contact_events(uint64_t shape,
+                                                  int32_t enabled);
+B3D_SHIM_API void b3d_shape_destroy(uint64_t shape, int32_t update_body_mass);
+
 #ifdef __cplusplus
 }
 #endif

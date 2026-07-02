@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:vector_math/vector_math.dart';
 
 import 'ffi/box3d_bindings.dart';
@@ -176,7 +178,7 @@ class Box3dBody {
 
   // --- Shapes ----------------------------------------------------------------
 
-  /// Attaches a sphere collider and returns its handle.
+  /// Attaches a sphere collider centered at [center] (body-local).
   Box3dShape addSphere(
     double radius, {
     Vector3? center,
@@ -185,6 +187,7 @@ class Box3dBody {
   }) {
     final c = center ?? Vector3.zero();
     return Box3dShape(
+      _bindings,
       _bindings.shapeSphere(
         handle,
         c.x,
@@ -199,14 +202,14 @@ class Box3dBody {
     );
   }
 
-  /// Attaches a box collider (given its half-extents) and returns its
-  /// handle.
+  /// Attaches a box collider given its half-extents.
   Box3dShape addBox(
     Vector3 halfExtents, {
     Box3dMaterial material = Box3dMaterial.standard,
     bool isSensor = false,
   }) {
     return Box3dShape(
+      _bindings,
       _bindings.shapeBox(
         handle,
         halfExtents.x,
@@ -218,6 +221,81 @@ class Box3dBody {
         isSensor,
       ),
     );
+  }
+
+  /// Attaches a capsule collider. By default it is aligned to the Y axis
+  /// with hemispherical caps at +/- [halfHeight]; pass [pointA] / [pointB]
+  /// (body-local hemisphere centers) for an arbitrary orientation.
+  Box3dShape addCapsule(
+    double radius, {
+    double halfHeight = 0.5,
+    Vector3? pointA,
+    Vector3? pointB,
+    Box3dMaterial material = Box3dMaterial.standard,
+    bool isSensor = false,
+  }) {
+    final a = pointA ?? Vector3(0, -halfHeight, 0);
+    final b = pointB ?? Vector3(0, halfHeight, 0);
+    return Box3dShape(
+      _bindings,
+      _bindings.shapeCapsule(
+        handle,
+        a.x,
+        a.y,
+        a.z,
+        b.x,
+        b.y,
+        b.z,
+        radius,
+        material.friction,
+        material.restitution,
+        material.density,
+        isSensor,
+      ),
+    );
+  }
+
+  /// Attaches a Y-axis cylinder collider, tessellated into a convex hull
+  /// with [sides] faces around the axis.
+  Box3dShape addCylinder(
+    double halfHeight,
+    double radius, {
+    int sides = 16,
+    Box3dMaterial material = Box3dMaterial.standard,
+    bool isSensor = false,
+  }) {
+    return Box3dShape(
+      _bindings,
+      _bindings.shapeCylinder(
+        handle,
+        halfHeight,
+        radius,
+        sides,
+        material.friction,
+        material.restitution,
+        material.density,
+        isSensor,
+      ),
+    );
+  }
+
+  /// Attaches a convex-hull collider computed from [points] (packed xyz
+  /// triplets in body-local space). Returns null if box3d rejects the point
+  /// set (fewer than four non-coplanar points, for example).
+  Box3dShape? addConvexHull(
+    Float32List points, {
+    Box3dMaterial material = Box3dMaterial.standard,
+    bool isSensor = false,
+  }) {
+    final h = _bindings.shapeConvexHull(
+      handle,
+      points,
+      material.friction,
+      material.restitution,
+      material.density,
+      isSensor,
+    );
+    return h == 0 ? null : Box3dShape(_bindings, h);
   }
 
   /// Removes this body (and its shapes) from the world.

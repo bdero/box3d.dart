@@ -40,11 +40,51 @@ class Box3dMaterial {
   static const Box3dMaterial standard = Box3dMaterial();
 }
 
-/// A handle to a shape attached to a [Box3dBody]. Opaque for now; richer
-/// shape control lands with the full shape set.
+/// A collider attached to a [Box3dBody]. Returned by the body's `add*`
+/// shape methods; use it to change the surface material, collision filter,
+/// or to remove the collider.
 class Box3dShape {
-  Box3dShape(this.handle);
+  /// Constructed by [Box3dBody]; not part of the public API.
+  Box3dShape(this._bindings, this.handle);
+
+  final Box3dBindings _bindings;
 
   /// The packed uint64 shape handle from the shim.
   final int handle;
+
+  bool _destroyed = false;
+
+  /// Replaces the shape's surface material (friction, restitution, and
+  /// density; changing density recomputes the body's mass).
+  void setMaterial(Box3dMaterial material) => _bindings.shapeSetMaterial(
+    handle,
+    material.friction,
+    material.restitution,
+    material.density,
+  );
+
+  /// Sets collision filtering. A pair of shapes collides only when each
+  /// one's [category] intersects the other's [mask]; a non-zero, matching
+  /// [group] forces always-collide (positive) or never-collide (negative).
+  void setCollisionFilter({
+    required int category,
+    required int mask,
+    int group = 0,
+  }) => _bindings.shapeSetFilter(handle, category, mask, group);
+
+  /// Whether this shape emits sensor (overlap) events.
+  set sensorEventsEnabled(bool value) =>
+      _bindings.shapeEnableSensorEvents(handle, value);
+
+  /// Whether this shape emits contact (begin/end touch) events.
+  set contactEventsEnabled(bool value) =>
+      _bindings.shapeEnableContactEvents(handle, value);
+
+  /// Removes this collider from its body. [updateBodyMass] recomputes the
+  /// body's mass from its remaining shapes.
+  void destroy({bool updateBodyMass = true}) {
+    if (_destroyed) return;
+    _destroyed = true;
+    _bindings.shapeDestroy(handle, updateBodyMass);
+  }
 }

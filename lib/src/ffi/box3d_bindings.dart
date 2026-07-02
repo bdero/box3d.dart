@@ -7,6 +7,8 @@
 // This surface is deliberately engine-agnostic: it mirrors box3d, and
 // references nothing from any engine that consumes the package.
 
+import 'dart:typed_data';
+
 import 'package:vector_math/vector_math.dart';
 
 /// Body-kind bytes shared with the shim's C ABI (match b3BodyType).
@@ -127,4 +129,50 @@ abstract class Box3dBindings {
     double density,
     bool isSensor,
   );
+  int shapeCapsule(
+    int body,
+    double ax,
+    double ay,
+    double az,
+    double bx,
+    double by,
+    double bz,
+    double radius,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  );
+  int shapeCylinder(
+    int body,
+    double halfHeight,
+    double radius,
+    int sides,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  );
+
+  /// Returns 0 (a null handle) when box3d rejects the point set.
+  int shapeConvexHull(
+    int body,
+    Float32List points,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  );
+
+  // Shape mutation.
+  void shapeSetMaterial(
+    int shape,
+    double friction,
+    double restitution,
+    double density,
+  );
+  void shapeSetFilter(int shape, int category, int mask, int group);
+  void shapeEnableSensorEvents(int shape, bool enabled);
+  void shapeEnableContactEvents(int shape, bool enabled);
+  void shapeDestroy(int shape, bool updateBodyMass);
 }

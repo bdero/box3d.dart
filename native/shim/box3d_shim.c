@@ -225,3 +225,74 @@ uint64_t b3d_shape_box(uint64_t body, float hx, float hy, float hz,
   b3ShapeId shape = b3CreateHullShape(b3LoadBodyId(body), &def, &box.base);
   return b3StoreShapeId(shape);
 }
+
+uint64_t b3d_shape_capsule(uint64_t body, float ax, float ay, float az,
+                           float bx, float by, float bz, float radius,
+                           float friction, float restitution, float density,
+                           int32_t is_sensor) {
+  b3ShapeDef def = b3d_shape_def(friction, restitution, density, is_sensor);
+  b3Capsule capsule = {{ax, ay, az}, {bx, by, bz}, radius};
+  b3ShapeId shape = b3CreateCapsuleShape(b3LoadBodyId(body), &def, &capsule);
+  return b3StoreShapeId(shape);
+}
+
+uint64_t b3d_shape_cylinder(uint64_t body, float half_height, float radius,
+                            int32_t sides, float friction, float restitution,
+                            float density, int32_t is_sensor) {
+  b3ShapeDef def = b3d_shape_def(friction, restitution, density, is_sensor);
+  // b3CreateCylinder builds the hull from y = yOffset up by height; offset
+  // by -half_height to center it on the body origin. box3d copies the hull
+  // into its own database during shape creation, so we free ours after.
+  b3HullData *hull = b3CreateCylinder(2.0f * half_height, radius, -half_height,
+                                      sides);
+  if (hull == 0) {
+    return 0;
+  }
+  b3ShapeId shape = b3CreateHullShape(b3LoadBodyId(body), &def, hull);
+  b3DestroyHull(hull);
+  return b3StoreShapeId(shape);
+}
+
+uint64_t b3d_shape_convex_hull(uint64_t body, const float *points,
+                               int32_t point_count, float friction,
+                               float restitution, float density,
+                               int32_t is_sensor) {
+  b3ShapeDef def = b3d_shape_def(friction, restitution, density, is_sensor);
+  // The packed xyz floats are laid out exactly like an array of b3Vec3.
+  b3HullData *hull =
+      b3CreateHull((const b3Vec3 *)points, point_count, point_count);
+  if (hull == 0) {
+    return 0;
+  }
+  b3ShapeId shape = b3CreateHullShape(b3LoadBodyId(body), &def, hull);
+  b3DestroyHull(hull);
+  return b3StoreShapeId(shape);
+}
+
+// --- Shape mutation --------------------------------------------------------
+
+void b3d_shape_set_material(uint64_t shape, float friction, float restitution,
+                            float density) {
+  b3ShapeId id = b3LoadShapeId(shape);
+  b3Shape_SetFriction(id, friction);
+  b3Shape_SetRestitution(id, restitution);
+  b3Shape_SetDensity(id, density, true);
+}
+
+void b3d_shape_set_filter(uint64_t shape, uint64_t category, uint64_t mask,
+                          int32_t group) {
+  b3Filter filter = {category, mask, group};
+  b3Shape_SetFilter(b3LoadShapeId(shape), filter, true);
+}
+
+void b3d_shape_enable_sensor_events(uint64_t shape, int32_t enabled) {
+  b3Shape_EnableSensorEvents(b3LoadShapeId(shape), enabled != 0);
+}
+
+void b3d_shape_enable_contact_events(uint64_t shape, int32_t enabled) {
+  b3Shape_EnableContactEvents(b3LoadShapeId(shape), enabled != 0);
+}
+
+void b3d_shape_destroy(uint64_t shape, int32_t update_body_mass) {
+  b3DestroyShape(b3LoadShapeId(shape), update_body_mass != 0);
+}

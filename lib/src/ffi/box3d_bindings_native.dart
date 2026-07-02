@@ -3,6 +3,7 @@
 // struct-returning reads (position, rotation, velocity) come back through.
 
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:vector_math/vector_math.dart';
@@ -267,4 +268,104 @@ class NativeBox3dBindings extends Box3dBindings {
     density,
     isSensor ? 1 : 0,
   );
+
+  @override
+  int shapeCapsule(
+    int body,
+    double ax,
+    double ay,
+    double az,
+    double bx,
+    double by,
+    double bz,
+    double radius,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  ) => native.b3dShapeCapsule(
+    body,
+    ax,
+    ay,
+    az,
+    bx,
+    by,
+    bz,
+    radius,
+    friction,
+    restitution,
+    density,
+    isSensor ? 1 : 0,
+  );
+
+  @override
+  int shapeCylinder(
+    int body,
+    double halfHeight,
+    double radius,
+    int sides,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  ) => native.b3dShapeCylinder(
+    body,
+    halfHeight,
+    radius,
+    sides,
+    friction,
+    restitution,
+    density,
+    isSensor ? 1 : 0,
+  );
+
+  @override
+  int shapeConvexHull(
+    int body,
+    Float32List points,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  ) {
+    final ptr = calloc<Float>(points.length);
+    try {
+      ptr.asTypedList(points.length).setAll(0, points);
+      return native.b3dShapeConvexHull(
+        body,
+        ptr,
+        points.length ~/ 3,
+        friction,
+        restitution,
+        density,
+        isSensor ? 1 : 0,
+      );
+    } finally {
+      calloc.free(ptr);
+    }
+  }
+
+  @override
+  void shapeSetMaterial(
+    int shape,
+    double friction,
+    double restitution,
+    double density,
+  ) => native.b3dShapeSetMaterial(shape, friction, restitution, density);
+
+  @override
+  void shapeSetFilter(int shape, int category, int mask, int group) =>
+      native.b3dShapeSetFilter(shape, category, mask, group);
+
+  @override
+  void shapeEnableSensorEvents(int shape, bool enabled) =>
+      native.b3dShapeEnableSensorEvents(shape, enabled ? 1 : 0);
+
+  @override
+  void shapeEnableContactEvents(int shape, bool enabled) =>
+      native.b3dShapeEnableContactEvents(shape, enabled ? 1 : 0);
+
+  @override
+  void shapeDestroy(int shape, bool updateBodyMass) =>
+      native.b3dShapeDestroy(shape, updateBodyMass ? 1 : 0);
 }

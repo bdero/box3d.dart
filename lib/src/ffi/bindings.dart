@@ -243,3 +243,85 @@ external int b3dShapeBox(
   double density,
   int isSensor,
 );
+
+@Native<
+  Uint64 Function(
+    Uint64,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Int32,
+  )
+>(symbol: 'b3d_shape_capsule')
+external int b3dShapeCapsule(
+  int body,
+  double ax,
+  double ay,
+  double az,
+  double bx,
+  double by,
+  double bz,
+  double radius,
+  double friction,
+  double restitution,
+  double density,
+  int isSensor,
+);
+
+@Native<
+  Uint64 Function(Uint64, Float, Float, Int32, Float, Float, Float, Int32)
+>(symbol: 'b3d_shape_cylinder')
+external int b3dShapeCylinder(
+  int body,
+  double halfHeight,
+  double radius,
+  int sides,
+  double friction,
+  double restitution,
+  double density,
+  int isSensor,
+);
+
+@Native<
+  Uint64 Function(Uint64, Pointer<Float>, Int32, Float, Float, Float, Int32)
+>(symbol: 'b3d_shape_convex_hull')
+external int b3dShapeConvexHull(
+  int body,
+  Pointer<Float> points,
+  int pointCount,
+  double friction,
+  double restitution,
+  double density,
+  int isSensor,
+);
+
+@Native<Void Function(Uint64, Float, Float, Float)>(
+  symbol: 'b3d_shape_set_material',
+)
+external void b3dShapeSetMaterial(
+  int shape,
+  double friction,
+  double restitution,
+  double density,
+);
+
+@Native<Void Function(Uint64, Uint64, Uint64, Int32)>(
+  symbol: 'b3d_shape_set_filter',
+)
+external void b3dShapeSetFilter(int shape, int category, int mask, int group);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_shape_enable_sensor_events')
+external void b3dShapeEnableSensorEvents(int shape, int enabled);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_shape_enable_contact_events')
+external void b3dShapeEnableContactEvents(int shape, int enabled);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_shape_destroy')
+external void b3dShapeDestroy(int shape, int updateBodyMass);
