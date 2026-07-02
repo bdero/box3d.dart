@@ -302,6 +302,60 @@ external int b3dShapeConvexHull(
   int isSensor,
 );
 
+@Native<
+  Uint64 Function(
+    Uint64,
+    Pointer<Float>,
+    Int32,
+    Pointer<Int32>,
+    Int32,
+    Float,
+    Float,
+    Float,
+    Int32,
+  )
+>(symbol: 'b3d_shape_trimesh')
+external int b3dShapeTriMesh(
+  int body,
+  Pointer<Float> vertices,
+  int vertexCount,
+  Pointer<Int32> indices,
+  int triangleCount,
+  double friction,
+  double restitution,
+  double density,
+  int isSensor,
+);
+
+@Native<
+  Uint64 Function(
+    Uint64,
+    Int32,
+    Int32,
+    Pointer<Float>,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Int32,
+  )
+>(symbol: 'b3d_shape_height_field')
+external int b3dShapeHeightField(
+  int body,
+  int countX,
+  int countZ,
+  Pointer<Float> heights,
+  double scaleX,
+  double scaleY,
+  double scaleZ,
+  double friction,
+  double restitution,
+  double density,
+  int isSensor,
+);
+
 @Native<Void Function(Uint64, Float, Float, Float)>(
   symbol: 'b3d_shape_set_material',
 )

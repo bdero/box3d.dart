@@ -8,12 +8,84 @@
 
 #include "box3d_shim.h"
 
+#include <stdbool.h>
+#include <stdlib.h>
+
 #include "box3d/box3d.h"
 #include "box3d/collision.h"
 #include "box3d/id.h"
 #include "box3d/types.h"
 
 int32_t b3d_is_double_precision(void) { return b3IsDoublePrecision() ? 1 : 0; }
+
+// ---------------------------------------------------------------------------
+// Owned-geometry registry
+//
+// box3d copies sphere, capsule, and hull geometry into its own storage, but
+// it keeps mesh and height-field data by pointer (see b3CreateShapeInternal
+// in src/shape.c). Those blobs must outlive the shape, so the shim owns them
+// and frees them when the shape (or its whole world) is destroyed. Single
+// threaded, like the rest of the shim.
+// ---------------------------------------------------------------------------
+
+enum { b3d_owned_mesh = 0, b3d_owned_height_field = 1 };
+
+typedef struct {
+  uint64_t shape;
+  int32_t kind;
+  void *ptr;
+} b3d_owned_entry;
+
+static b3d_owned_entry *b3d_owned = 0;
+static int32_t b3d_owned_count = 0;
+static int32_t b3d_owned_cap = 0;
+
+static void b3d_owned_add(uint64_t shape, int32_t kind, void *ptr) {
+  if (b3d_owned_count == b3d_owned_cap) {
+    int32_t cap = b3d_owned_cap ? b3d_owned_cap * 2 : 8;
+    b3d_owned = realloc(b3d_owned, (size_t)cap * sizeof(b3d_owned_entry));
+    b3d_owned_cap = cap;
+  }
+  b3d_owned[b3d_owned_count].shape = shape;
+  b3d_owned[b3d_owned_count].kind = kind;
+  b3d_owned[b3d_owned_count].ptr = ptr;
+  b3d_owned_count++;
+}
+
+static void b3d_owned_free_ptr(int32_t kind, void *ptr) {
+  if (kind == b3d_owned_mesh) {
+    b3DestroyMesh((b3MeshData *)ptr);
+  } else {
+    b3DestroyHeightField((b3HeightFieldData *)ptr);
+  }
+}
+
+// Frees the blob owned by one shape, if any (swap-remove).
+static void b3d_owned_remove_shape(uint64_t shape) {
+  for (int32_t i = 0; i < b3d_owned_count; i++) {
+    if (b3d_owned[i].shape == shape) {
+      b3d_owned_free_ptr(b3d_owned[i].kind, b3d_owned[i].ptr);
+      b3d_owned[i] = b3d_owned[--b3d_owned_count];
+      return;
+    }
+  }
+}
+
+// Frees every blob whose shape belongs to a world. The world index is the
+// high half of the packed world handle and the world0 field packed into
+// each shape handle (see box3d's id.h packings).
+static void b3d_owned_free_world(uint32_t world) {
+  uint16_t world_index = (uint16_t)(world >> 16);
+  for (int32_t i = 0; i < b3d_owned_count;) {
+    uint16_t shape_world = (uint16_t)((b3d_owned[i].shape >> 16) & 0xFFFF);
+    if (shape_world == world_index) {
+      b3d_owned_free_ptr(b3d_owned[i].kind, b3d_owned[i].ptr);
+      b3d_owned[i] = b3d_owned[--b3d_owned_count];
+    } else {
+      i++;
+    }
+  }
+}
 
 // --- World -----------------------------------------------------------------
 
@@ -30,7 +102,12 @@ uint32_t b3d_world_create(float gx, float gy, float gz) {
   return b3StoreWorldId(world);
 }
 
-void b3d_world_destroy(uint32_t world) { b3DestroyWorld(b3LoadWorldId(world)); }
+void b3d_world_destroy(uint32_t world) {
+  // Destroy box3d's world first (it tears down the shapes that reference our
+  // mesh/height-field blobs), then free the blobs we still own.
+  b3DestroyWorld(b3LoadWorldId(world));
+  b3d_owned_free_world(world);
+}
 
 void b3d_world_set_gravity(uint32_t world, float x, float y, float z) {
   b3World_SetGravity(b3LoadWorldId(world), (b3Vec3){x, y, z});
@@ -295,4 +372,76 @@ void b3d_shape_enable_contact_events(uint64_t shape, int32_t enabled) {
 
 void b3d_shape_destroy(uint64_t shape, int32_t update_body_mass) {
   b3DestroyShape(b3LoadShapeId(shape), update_body_mass != 0);
+  b3d_owned_remove_shape(shape);
+}
+
+uint64_t b3d_shape_trimesh(uint64_t body, const float *vertices,
+                           int32_t vertex_count, const int32_t *indices,
+                           int32_t triangle_count, float friction,
+                           float restitution, float density,
+                           int32_t is_sensor) {
+  b3ShapeDef def = b3d_shape_def(friction, restitution, density, is_sensor);
+  b3MeshDef mesh_def = {0};
+  // The packed xyz floats are laid out exactly like an array of b3Vec3.
+  mesh_def.vertices = (b3Vec3 *)vertices;
+  mesh_def.indices = (int32_t *)indices;
+  mesh_def.vertexCount = vertex_count;
+  mesh_def.triangleCount = triangle_count;
+  b3MeshData *mesh = b3CreateMesh(&mesh_def, 0, 0);
+  if (mesh == 0) {
+    return 0;
+  }
+  b3ShapeId shape = b3CreateMeshShape(b3LoadBodyId(body), &def, mesh,
+                                      (b3Vec3){1.0f, 1.0f, 1.0f});
+  if (shape.index1 == 0) {
+    b3DestroyMesh(mesh);
+    return 0;
+  }
+  uint64_t handle = b3StoreShapeId(shape);
+  b3d_owned_add(handle, b3d_owned_mesh, mesh);
+  return handle;
+}
+
+uint64_t b3d_shape_height_field(uint64_t body, int32_t count_x, int32_t count_z,
+                                const float *heights, float scale_x,
+                                float scale_y, float scale_z, float friction,
+                                float restitution, float density,
+                                int32_t is_sensor) {
+  b3ShapeDef def = b3d_shape_def(friction, restitution, density, is_sensor);
+
+  // Quantization needs a non-empty height range.
+  int32_t count = count_x * count_z;
+  float minimum = heights[0];
+  float maximum = heights[0];
+  for (int32_t i = 1; i < count; i++) {
+    if (heights[i] < minimum) {
+      minimum = heights[i];
+    }
+    if (heights[i] > maximum) {
+      maximum = heights[i];
+    }
+  }
+  if (maximum <= minimum) {
+    maximum = minimum + 1.0f;
+  }
+
+  b3HeightFieldDef hf_def = {0};
+  hf_def.heights = (float *)heights;
+  hf_def.scale = (b3Vec3){scale_x, scale_y, scale_z};
+  hf_def.countX = count_x;
+  hf_def.countZ = count_z;
+  hf_def.globalMinimumHeight = minimum;
+  hf_def.globalMaximumHeight = maximum;
+  b3HeightFieldData *field = b3CreateHeightField(&hf_def);
+  if (field == 0) {
+    return 0;
+  }
+  b3ShapeId shape = b3CreateHeightFieldShape(b3LoadBodyId(body), &def, field);
+  if (shape.index1 == 0) {
+    b3DestroyHeightField(field);
+    return 0;
+  }
+  uint64_t handle = b3StoreShapeId(shape);
+  b3d_owned_add(handle, b3d_owned_height_field, field);
+  return handle;
 }

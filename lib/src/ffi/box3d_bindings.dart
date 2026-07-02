@@ -164,6 +164,33 @@ abstract class Box3dBindings {
     bool isSensor,
   );
 
+  /// Returns 0 (a null handle) when box3d rejects the mesh.
+  int shapeTriMesh(
+    int body,
+    Float32List vertices,
+    Uint32List indices,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  );
+
+  /// Returns 0 (a null handle) on rejection. Heights are row-major over a
+  /// countX by countZ grid.
+  int shapeHeightField(
+    int body,
+    int countX,
+    int countZ,
+    Float32List heights,
+    double scaleX,
+    double scaleY,
+    double scaleZ,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  );
+
   // Shape mutation.
   void shapeSetMaterial(
     int shape,

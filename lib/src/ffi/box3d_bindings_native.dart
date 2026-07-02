@@ -346,6 +346,73 @@ class NativeBox3dBindings extends Box3dBindings {
   }
 
   @override
+  int shapeTriMesh(
+    int body,
+    Float32List vertices,
+    Uint32List indices,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  ) {
+    final vPtr = calloc<Float>(vertices.length);
+    final iPtr = calloc<Int32>(indices.length);
+    try {
+      vPtr.asTypedList(vertices.length).setAll(0, vertices);
+      iPtr.cast<Uint32>().asTypedList(indices.length).setAll(0, indices);
+      return native.b3dShapeTriMesh(
+        body,
+        vPtr,
+        vertices.length ~/ 3,
+        iPtr,
+        indices.length ~/ 3,
+        friction,
+        restitution,
+        density,
+        isSensor ? 1 : 0,
+      );
+    } finally {
+      calloc.free(vPtr);
+      calloc.free(iPtr);
+    }
+  }
+
+  @override
+  int shapeHeightField(
+    int body,
+    int countX,
+    int countZ,
+    Float32List heights,
+    double scaleX,
+    double scaleY,
+    double scaleZ,
+    double friction,
+    double restitution,
+    double density,
+    bool isSensor,
+  ) {
+    final ptr = calloc<Float>(heights.length);
+    try {
+      ptr.asTypedList(heights.length).setAll(0, heights);
+      return native.b3dShapeHeightField(
+        body,
+        countX,
+        countZ,
+        ptr,
+        scaleX,
+        scaleY,
+        scaleZ,
+        friction,
+        restitution,
+        density,
+        isSensor ? 1 : 0,
+      );
+    } finally {
+      calloc.free(ptr);
+    }
+  }
+
+  @override
   void shapeSetMaterial(
     int shape,
     double friction,

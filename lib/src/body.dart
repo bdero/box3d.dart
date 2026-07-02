@@ -298,6 +298,55 @@ class Box3dBody {
     return h == 0 ? null : Box3dShape(_bindings, h);
   }
 
+  /// Attaches a concave triangle-mesh collider from [vertices] (packed xyz)
+  /// and [indices] (three per triangle). Meshes are concave and generally
+  /// belong on a static body. Returns null if box3d rejects the mesh.
+  Box3dShape? addTriMesh(
+    Float32List vertices,
+    Uint32List indices, {
+    Box3dMaterial material = Box3dMaterial.standard,
+    bool isSensor = false,
+  }) {
+    final h = _bindings.shapeTriMesh(
+      handle,
+      vertices,
+      indices,
+      material.friction,
+      material.restitution,
+      material.density,
+      isSensor,
+    );
+    return h == 0 ? null : Box3dShape(_bindings, h);
+  }
+
+  /// Attaches a height-field collider: a [countX] by [countZ] grid of
+  /// row-major [heights] (unscaled), scaled by [scale]. Typically on a
+  /// static body. Returns null on rejection.
+  Box3dShape? addHeightField({
+    required int countX,
+    required int countZ,
+    required Float32List heights,
+    Vector3? scale,
+    Box3dMaterial material = Box3dMaterial.standard,
+    bool isSensor = false,
+  }) {
+    final s = scale ?? Vector3.all(1);
+    final h = _bindings.shapeHeightField(
+      handle,
+      countX,
+      countZ,
+      heights,
+      s.x,
+      s.y,
+      s.z,
+      material.friction,
+      material.restitution,
+      material.density,
+      isSensor,
+    );
+    return h == 0 ? null : Box3dShape(_bindings, h);
+  }
+
   /// Removes this body (and its shapes) from the world.
   void destroy() {
     if (_destroyed) return;

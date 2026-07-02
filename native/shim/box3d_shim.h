@@ -133,6 +133,26 @@ B3D_SHIM_API uint64_t b3d_shape_convex_hull(uint64_t body, const float *points,
                                             float restitution, float density,
                                             int32_t is_sensor);
 
+// A triangle mesh from `vertex_count` packed-xyz vertices and
+// `triangle_count` triangles (3 int32 indices each). Concave; typically
+// attached to a static body. Returns 0 if box3d rejects the mesh. The shim
+// retains ownership of the built mesh (box3d references it by pointer) and
+// frees it when the shape or its world is destroyed.
+B3D_SHIM_API uint64_t b3d_shape_trimesh(uint64_t body, const float *vertices,
+                                        int32_t vertex_count,
+                                        const int32_t *indices,
+                                        int32_t triangle_count, float friction,
+                                        float restitution, float density,
+                                        int32_t is_sensor);
+
+// A height field over a count_x by count_z grid of unscaled heights
+// (row-major), scaled by (scale_x, scale_y, scale_z). Same ownership note
+// as the triangle mesh. Returns 0 on rejection.
+B3D_SHIM_API uint64_t b3d_shape_height_field(
+    uint64_t body, int32_t count_x, int32_t count_z, const float *heights,
+    float scale_x, float scale_y, float scale_z, float friction,
+    float restitution, float density, int32_t is_sensor);
+
 // --- Shape mutation --------------------------------------------------------
 
 B3D_SHIM_API void b3d_shape_set_material(uint64_t shape, float friction,
