@@ -546,3 +546,67 @@ external int b3dJointDistance(
 
 @Native<Void Function(Uint64, Int32)>(symbol: 'b3d_joint_destroy')
 external void b3dJointDestroy(int joint, int wakeBodies);
+
+// --- Events ----------------------------------------------------------------
+
+/// Layout matches `b3d_contact_point` in the shim header.
+final class B3dContactPoint extends Struct {
+  @Float()
+  external double px;
+  @Float()
+  external double py;
+  @Float()
+  external double pz;
+  @Float()
+  external double nx;
+  @Float()
+  external double ny;
+  @Float()
+  external double nz;
+  @Float()
+  external double impulse;
+  @Float()
+  external double separation;
+}
+
+@Native<Int32 Function(Uint32)>(symbol: 'b3d_contact_begin_count')
+external int b3dContactBeginCount(int world);
+
+@Native<Int32 Function(Uint32, Int32, Pointer<Uint64>)>(
+  symbol: 'b3d_contact_begin_at',
+)
+external int b3dContactBeginAt(int world, int index, Pointer<Uint64> outShapes);
+
+@Native<Void Function(Uint32, Int32, Int32, Pointer<B3dContactPoint>)>(
+  symbol: 'b3d_contact_begin_point_at',
+)
+external void b3dContactBeginPointAt(
+  int world,
+  int eventIndex,
+  int pointIndex,
+  Pointer<B3dContactPoint> out,
+);
+
+@Native<Int32 Function(Uint32)>(symbol: 'b3d_contact_end_count')
+external int b3dContactEndCount(int world);
+
+@Native<Void Function(Uint32, Int32, Pointer<Uint64>)>(
+  symbol: 'b3d_contact_end_at',
+)
+external void b3dContactEndAt(int world, int index, Pointer<Uint64> outShapes);
+
+@Native<Int32 Function(Uint32)>(symbol: 'b3d_sensor_begin_count')
+external int b3dSensorBeginCount(int world);
+
+@Native<Void Function(Uint32, Int32, Pointer<Uint64>)>(
+  symbol: 'b3d_sensor_begin_at',
+)
+external void b3dSensorBeginAt(int world, int index, Pointer<Uint64> outShapes);
+
+@Native<Int32 Function(Uint32)>(symbol: 'b3d_sensor_end_count')
+external int b3dSensorEndCount(int world);
+
+@Native<Void Function(Uint32, Int32, Pointer<Uint64>)>(
+  symbol: 'b3d_sensor_end_at',
+)
+external void b3dSensorEndAt(int world, int index, Pointer<Uint64> outShapes);

@@ -11,6 +11,8 @@ import 'dart:typed_data';
 
 import 'package:vector_math/vector_math.dart';
 
+import '../events.dart';
+
 /// Body-kind bytes shared with the shim's C ABI (match b3BodyType).
 const int bodyKindStatic = 0;
 const int bodyKindKinematic = 1;
@@ -289,4 +291,10 @@ abstract class Box3dBindings {
     double maxMotorForce,
   );
   void jointDestroy(int joint, bool wakeBodies);
+
+  // Events from the most recent step (valid until the next step).
+  List<Box3dContactBegan> contactBegan(int world);
+  List<Box3dContactEnded> contactEnded(int world);
+  List<Box3dSensorBegan> sensorBegan(int world);
+  List<Box3dSensorEnded> sensorEnded(int world);
 }

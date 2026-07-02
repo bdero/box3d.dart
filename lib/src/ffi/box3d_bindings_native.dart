@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../events.dart';
 import 'bindings.dart' as native;
 import 'box3d_bindings.dart';
 
@@ -35,6 +36,11 @@ class NativeBox3dBindings extends Box3dBindings {
   // Scratch for the two joint local frames (7 floats each: xyz + xyzw).
   final Pointer<Float> _frameA = calloc<Float>(7);
   final Pointer<Float> _frameB = calloc<Float>(7);
+
+  // Scratch for event reads: a two-handle pair and one contact point.
+  final Pointer<Uint64> _shapes = calloc<Uint64>(2);
+  final Pointer<native.B3dContactPoint> _point =
+      calloc<native.B3dContactPoint>();
 
   void _writeFrames(
     Vector3 posA,
@@ -641,4 +647,71 @@ class NativeBox3dBindings extends Box3dBindings {
   @override
   void jointDestroy(int joint, bool wakeBodies) =>
       native.b3dJointDestroy(joint, wakeBodies ? 1 : 0);
+
+  @override
+  List<Box3dContactBegan> contactBegan(int world) {
+    final count = native.b3dContactBeginCount(world);
+    final events = <Box3dContactBegan>[];
+    for (var i = 0; i < count; i++) {
+      final pointCount = native.b3dContactBeginAt(world, i, _shapes);
+      final points = <Box3dContactPoint>[];
+      for (var p = 0; p < pointCount; p++) {
+        native.b3dContactBeginPointAt(world, i, p, _point);
+        final c = _point.ref;
+        points.add(
+          Box3dContactPoint(
+            position: Vector3(c.px, c.py, c.pz),
+            normal: Vector3(c.nx, c.ny, c.nz),
+            impulse: c.impulse,
+            separation: c.separation,
+          ),
+        );
+      }
+      events.add(
+        Box3dContactBegan(
+          shapeA: _shapes[0],
+          shapeB: _shapes[1],
+          points: points,
+        ),
+      );
+    }
+    return events;
+  }
+
+  @override
+  List<Box3dContactEnded> contactEnded(int world) {
+    final count = native.b3dContactEndCount(world);
+    final events = <Box3dContactEnded>[];
+    for (var i = 0; i < count; i++) {
+      native.b3dContactEndAt(world, i, _shapes);
+      events.add(Box3dContactEnded(shapeA: _shapes[0], shapeB: _shapes[1]));
+    }
+    return events;
+  }
+
+  @override
+  List<Box3dSensorBegan> sensorBegan(int world) {
+    final count = native.b3dSensorBeginCount(world);
+    final events = <Box3dSensorBegan>[];
+    for (var i = 0; i < count; i++) {
+      native.b3dSensorBeginAt(world, i, _shapes);
+      events.add(
+        Box3dSensorBegan(sensorShape: _shapes[0], visitorShape: _shapes[1]),
+      );
+    }
+    return events;
+  }
+
+  @override
+  List<Box3dSensorEnded> sensorEnded(int world) {
+    final count = native.b3dSensorEndCount(world);
+    final events = <Box3dSensorEnded>[];
+    for (var i = 0; i < count; i++) {
+      native.b3dSensorEndAt(world, i, _shapes);
+      events.add(
+        Box3dSensorEnded(sensorShape: _shapes[0], visitorShape: _shapes[1]),
+      );
+    }
+    return events;
+  }
 }

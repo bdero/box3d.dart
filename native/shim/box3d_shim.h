@@ -207,6 +207,43 @@ B3D_SHIM_API uint64_t b3d_joint_distance(
 
 B3D_SHIM_API void b3d_joint_destroy(uint64_t joint, int32_t wake_bodies);
 
+// --- Events ----------------------------------------------------------------
+//
+// Events describe what happened during the most recent b3d_world_step and
+// are valid until the next step. Drain them each frame. Shape handles are
+// written to a caller-provided uint64[2] (out_shapes).
+
+// One contact-manifold point: world position, world normal, normal impulse
+// applied this step, and separation (negative when interpenetrating).
+typedef struct {
+  float px, py, pz;
+  float nx, ny, nz;
+  float impulse;
+  float separation;
+} b3d_contact_point;
+
+// Solid contact begin/end. A begin event carries a contact manifold; use
+// b3d_contact_begin_at's return value (the point count) with
+// b3d_contact_begin_point_at to read the points.
+B3D_SHIM_API int32_t b3d_contact_begin_count(uint32_t world);
+B3D_SHIM_API int32_t b3d_contact_begin_at(uint32_t world, int32_t index,
+                                          uint64_t *out_shapes);
+B3D_SHIM_API void b3d_contact_begin_point_at(uint32_t world,
+                                             int32_t event_index,
+                                             int32_t point_index,
+                                             b3d_contact_point *out);
+B3D_SHIM_API int32_t b3d_contact_end_count(uint32_t world);
+B3D_SHIM_API void b3d_contact_end_at(uint32_t world, int32_t index,
+                                     uint64_t *out_shapes);
+
+// Sensor (trigger) begin/end. out_shapes receives {sensorShape, visitorShape}.
+B3D_SHIM_API int32_t b3d_sensor_begin_count(uint32_t world);
+B3D_SHIM_API void b3d_sensor_begin_at(uint32_t world, int32_t index,
+                                      uint64_t *out_shapes);
+B3D_SHIM_API int32_t b3d_sensor_end_count(uint32_t world);
+B3D_SHIM_API void b3d_sensor_end_at(uint32_t world, int32_t index,
+                                    uint64_t *out_shapes);
+
 #ifdef __cplusplus
 }
 #endif

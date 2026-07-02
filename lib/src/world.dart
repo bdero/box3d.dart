@@ -1,6 +1,7 @@
 import 'package:vector_math/vector_math.dart';
 
 import 'body.dart';
+import 'events.dart';
 import 'ffi/box3d_bindings.dart';
 import 'ffi/box3d_bindings_factory.dart';
 import 'physics_types.dart';
@@ -259,6 +260,19 @@ class Box3dWorld {
       ),
     );
   }
+
+  // --- Events ----------------------------------------------------------------
+
+  /// Drains the contact and sensor events from the most recent [step]. Call
+  /// once per step; the underlying buffers are replaced on the next step.
+  /// Shapes must opt in via [Box3dShape.contactEventsEnabled] /
+  /// [Box3dShape.sensorEventsEnabled] to appear here.
+  Box3dEvents drainEvents() => Box3dEvents(
+    contactBegan: _bindings.contactBegan(_handle),
+    contactEnded: _bindings.contactEnded(_handle),
+    sensorBegan: _bindings.sensorBegan(_handle),
+    sensorEnded: _bindings.sensorEnded(_handle),
+  );
 
   /// Destroys the world and everything in it.
   void dispose() {

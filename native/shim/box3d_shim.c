@@ -514,6 +514,86 @@ void b3d_joint_destroy(uint64_t joint, int32_t wake_bodies) {
   b3DestroyJoint(b3LoadJointId(joint), wake_bodies != 0);
 }
 
+// --- Events ----------------------------------------------------------------
+
+int32_t b3d_contact_begin_count(uint32_t world) {
+  return b3World_GetContactEvents(b3LoadWorldId(world)).beginCount;
+}
+
+int32_t b3d_contact_begin_at(uint32_t world, int32_t index,
+                             uint64_t *out_shapes) {
+  b3ContactEvents events = b3World_GetContactEvents(b3LoadWorldId(world));
+  b3ContactBeginTouchEvent event = events.beginEvents[index];
+  out_shapes[0] = b3StoreShapeId(event.shapeIdA);
+  out_shapes[1] = b3StoreShapeId(event.shapeIdB);
+  b3ContactData data = b3Contact_GetData(event.contactId);
+  int32_t count = 0;
+  for (int32_t m = 0; m < data.manifoldCount; m++) {
+    count += data.manifolds[m].pointCount;
+  }
+  return count;
+}
+
+void b3d_contact_begin_point_at(uint32_t world, int32_t event_index,
+                                int32_t point_index, b3d_contact_point *out) {
+  b3ContactEvents events = b3World_GetContactEvents(b3LoadWorldId(world));
+  b3ContactBeginTouchEvent event = events.beginEvents[event_index];
+  b3ContactData data = b3Contact_GetData(event.contactId);
+  // Manifold anchors are relative to body A's center of mass in world space.
+  b3BodyId body_a = b3Shape_GetBody(event.shapeIdA);
+  b3Pos center = b3Body_GetWorldCenterOfMass(body_a);
+  int32_t idx = point_index;
+  for (int32_t m = 0; m < data.manifoldCount; m++) {
+    const b3Manifold *manifold = &data.manifolds[m];
+    if (idx < manifold->pointCount) {
+      b3ManifoldPoint p = manifold->points[idx];
+      out->px = (float)center.x + p.anchorA.x;
+      out->py = (float)center.y + p.anchorA.y;
+      out->pz = (float)center.z + p.anchorA.z;
+      out->nx = manifold->normal.x;
+      out->ny = manifold->normal.y;
+      out->nz = manifold->normal.z;
+      out->impulse = p.normalImpulse;
+      out->separation = p.separation;
+      return;
+    }
+    idx -= manifold->pointCount;
+  }
+}
+
+int32_t b3d_contact_end_count(uint32_t world) {
+  return b3World_GetContactEvents(b3LoadWorldId(world)).endCount;
+}
+
+void b3d_contact_end_at(uint32_t world, int32_t index, uint64_t *out_shapes) {
+  b3ContactEvents events = b3World_GetContactEvents(b3LoadWorldId(world));
+  b3ContactEndTouchEvent event = events.endEvents[index];
+  out_shapes[0] = b3StoreShapeId(event.shapeIdA);
+  out_shapes[1] = b3StoreShapeId(event.shapeIdB);
+}
+
+int32_t b3d_sensor_begin_count(uint32_t world) {
+  return b3World_GetSensorEvents(b3LoadWorldId(world)).beginCount;
+}
+
+void b3d_sensor_begin_at(uint32_t world, int32_t index, uint64_t *out_shapes) {
+  b3SensorEvents events = b3World_GetSensorEvents(b3LoadWorldId(world));
+  b3SensorBeginTouchEvent event = events.beginEvents[index];
+  out_shapes[0] = b3StoreShapeId(event.sensorShapeId);
+  out_shapes[1] = b3StoreShapeId(event.visitorShapeId);
+}
+
+int32_t b3d_sensor_end_count(uint32_t world) {
+  return b3World_GetSensorEvents(b3LoadWorldId(world)).endCount;
+}
+
+void b3d_sensor_end_at(uint32_t world, int32_t index, uint64_t *out_shapes) {
+  b3SensorEvents events = b3World_GetSensorEvents(b3LoadWorldId(world));
+  b3SensorEndTouchEvent event = events.endEvents[index];
+  out_shapes[0] = b3StoreShapeId(event.sensorShapeId);
+  out_shapes[1] = b3StoreShapeId(event.visitorShapeId);
+}
+
 uint64_t b3d_shape_height_field(uint64_t body, int32_t count_x, int32_t count_z,
                                 const float *heights, float scale_x,
                                 float scale_y, float scale_z, float friction,
