@@ -1,0 +1,19 @@
+# The published package only needs box3d's library sources and headers plus
+# the shim; box3d's samples, tests, benchmarks, data, docs, and build files
+# (including the ~1 MB vendored sokol header) would otherwise bloat the
+# archive. The build hook compiles native/box3d/src + native/shim against
+# native/box3d/include.
+native/box3d/benchmark/
+native/box3d/data/
+native/box3d/docs/
+native/box3d/extern/
+native/box3d/samples/
+native/box3d/shared/
+native/box3d/test/
+native/box3d/.github/
+native/box3d/CMakeLists.txt
+native/box3d/CMakePresets.json
+native/box3d/build.sh
+native/box3d/build_vs2026.bat
+native/box3d/deploy_docs.sh
+native/box3d/README.md

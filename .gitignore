@@ -3,7 +3,3 @@
 .packages
 pubspec.lock
 build/
-
-# Native build artifacts (vendored binaries land here later)
-*.o
-*.obj

@@ -1,0 +1,41 @@
+name: CI
+
+# Builds and tests box3d on every desktop platform. box3d is compiled from
+# the vendored sources through the native-assets build hook, so this also
+# catches per-platform C compile breaks before they reach consumers.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: dev
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze
+        run: dart analyze
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test hook
+
+      - name: Test
+        run: dart test
