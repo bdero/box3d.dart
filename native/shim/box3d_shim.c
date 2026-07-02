@@ -402,6 +402,118 @@ uint64_t b3d_shape_trimesh(uint64_t body, const float *vertices,
   return handle;
 }
 
+// --- Joints ----------------------------------------------------------------
+
+static b3Transform b3d_frame(const float *f) {
+  return (b3Transform){{f[0], f[1], f[2]}, {{f[3], f[4], f[5]}, f[6]}};
+}
+
+// Fills the common joint fields shared by every joint def.
+static void b3d_fill_joint_base(b3JointDef *base, uint64_t body_a,
+                                uint64_t body_b, const float *frame_a,
+                                const float *frame_b, int32_t collide) {
+  base->bodyIdA = b3LoadBodyId(body_a);
+  base->bodyIdB = b3LoadBodyId(body_b);
+  base->localFrameA = b3d_frame(frame_a);
+  base->localFrameB = b3d_frame(frame_b);
+  base->collideConnected = collide != 0;
+}
+
+uint64_t b3d_joint_weld(uint32_t world, uint64_t body_a, uint64_t body_b,
+                        const float *frame_a, const float *frame_b,
+                        int32_t collide, float linear_hertz,
+                        float angular_hertz, float linear_damping,
+                        float angular_damping) {
+  b3WeldJointDef def = b3DefaultWeldJointDef();
+  b3d_fill_joint_base(&def.base, body_a, body_b, frame_a, frame_b, collide);
+  def.linearHertz = linear_hertz;
+  def.angularHertz = angular_hertz;
+  def.linearDampingRatio = linear_damping;
+  def.angularDampingRatio = angular_damping;
+  b3JointId joint = b3CreateWeldJoint(b3LoadWorldId(world), &def);
+  return b3StoreJointId(joint);
+}
+
+uint64_t b3d_joint_revolute(uint32_t world, uint64_t body_a, uint64_t body_b,
+                            const float *frame_a, const float *frame_b,
+                            int32_t collide, int32_t enable_limit, float lower,
+                            float upper, int32_t enable_motor, float motor_speed,
+                            float max_motor_torque) {
+  b3RevoluteJointDef def = b3DefaultRevoluteJointDef();
+  b3d_fill_joint_base(&def.base, body_a, body_b, frame_a, frame_b, collide);
+  def.enableLimit = enable_limit != 0;
+  def.lowerAngle = lower;
+  def.upperAngle = upper;
+  def.enableMotor = enable_motor != 0;
+  def.motorSpeed = motor_speed;
+  def.maxMotorTorque = max_motor_torque;
+  b3JointId joint = b3CreateRevoluteJoint(b3LoadWorldId(world), &def);
+  return b3StoreJointId(joint);
+}
+
+uint64_t b3d_joint_prismatic(uint32_t world, uint64_t body_a, uint64_t body_b,
+                             const float *frame_a, const float *frame_b,
+                             int32_t collide, int32_t enable_limit, float lower,
+                             float upper, int32_t enable_motor,
+                             float motor_speed, float max_motor_force) {
+  b3PrismaticJointDef def = b3DefaultPrismaticJointDef();
+  b3d_fill_joint_base(&def.base, body_a, body_b, frame_a, frame_b, collide);
+  def.enableLimit = enable_limit != 0;
+  def.lowerTranslation = lower;
+  def.upperTranslation = upper;
+  def.enableMotor = enable_motor != 0;
+  def.motorSpeed = motor_speed;
+  def.maxMotorForce = max_motor_force;
+  b3JointId joint = b3CreatePrismaticJoint(b3LoadWorldId(world), &def);
+  return b3StoreJointId(joint);
+}
+
+uint64_t b3d_joint_spherical(uint32_t world, uint64_t body_a, uint64_t body_b,
+                             const float *frame_a, const float *frame_b,
+                             int32_t collide, int32_t enable_cone,
+                             float cone_angle, int32_t enable_twist,
+                             float lower_twist, float upper_twist,
+                             int32_t enable_motor, float max_motor_torque) {
+  b3SphericalJointDef def = b3DefaultSphericalJointDef();
+  b3d_fill_joint_base(&def.base, body_a, body_b, frame_a, frame_b, collide);
+  def.enableConeLimit = enable_cone != 0;
+  def.coneAngle = cone_angle;
+  def.enableTwistLimit = enable_twist != 0;
+  def.lowerTwistAngle = lower_twist;
+  def.upperTwistAngle = upper_twist;
+  def.enableMotor = enable_motor != 0;
+  def.maxMotorTorque = max_motor_torque;
+  b3JointId joint = b3CreateSphericalJoint(b3LoadWorldId(world), &def);
+  return b3StoreJointId(joint);
+}
+
+uint64_t b3d_joint_distance(uint32_t world, uint64_t body_a, uint64_t body_b,
+                            const float *frame_a, const float *frame_b,
+                            int32_t collide, float length, int32_t enable_limit,
+                            float min_length, float max_length,
+                            int32_t enable_spring, float hertz,
+                            float damping_ratio, int32_t enable_motor,
+                            float motor_speed, float max_motor_force) {
+  b3DistanceJointDef def = b3DefaultDistanceJointDef();
+  b3d_fill_joint_base(&def.base, body_a, body_b, frame_a, frame_b, collide);
+  def.length = length;
+  def.enableLimit = enable_limit != 0;
+  def.minLength = min_length;
+  def.maxLength = max_length;
+  def.enableSpring = enable_spring != 0;
+  def.hertz = hertz;
+  def.dampingRatio = damping_ratio;
+  def.enableMotor = enable_motor != 0;
+  def.motorSpeed = motor_speed;
+  def.maxMotorForce = max_motor_force;
+  b3JointId joint = b3CreateDistanceJoint(b3LoadWorldId(world), &def);
+  return b3StoreJointId(joint);
+}
+
+void b3d_joint_destroy(uint64_t joint, int32_t wake_bodies) {
+  b3DestroyJoint(b3LoadJointId(joint), wake_bodies != 0);
+}
+
 uint64_t b3d_shape_height_field(uint64_t body, int32_t count_x, int32_t count_z,
                                 const float *heights, float scale_x,
                                 float scale_y, float scale_z, float friction,

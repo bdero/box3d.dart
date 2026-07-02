@@ -63,6 +63,203 @@ class Box3dWorld {
     return Box3dBody(_bindings, handle, type);
   }
 
+  // --- Joints ----------------------------------------------------------------
+
+  /// Rigidly welds [bodyA] to [bodyB] at the given local frames. With all
+  /// hertz values 0 the weld is rigid; positive values make it a soft,
+  /// spring-like weld.
+  Box3dJoint createWeldJoint(
+    Box3dBody bodyA,
+    Box3dBody bodyB, {
+    Box3dFrame? frameA,
+    Box3dFrame? frameB,
+    bool collideConnected = false,
+    double linearHertz = 0,
+    double angularHertz = 0,
+    double linearDampingRatio = 0,
+    double angularDampingRatio = 0,
+  }) {
+    final a = frameA ?? Box3dFrame();
+    final b = frameB ?? Box3dFrame();
+    return Box3dJoint(
+      _bindings,
+      _bindings.jointWeld(
+        _handle,
+        bodyA.handle,
+        bodyB.handle,
+        a.position,
+        a.rotation,
+        b.position,
+        b.rotation,
+        collideConnected,
+        linearHertz,
+        angularHertz,
+        linearDampingRatio,
+        angularDampingRatio,
+      ),
+    );
+  }
+
+  /// Creates a revolute (hinge) joint. The hinge axis is each frame's local
+  /// +Z direction (see [Box3dFrame.pointAxis]). Providing both
+  /// [lowerLimit] and [upperLimit] (radians) enables the limit; providing
+  /// [motorSpeed] and [maxMotorTorque] enables the motor.
+  Box3dJoint createRevoluteJoint(
+    Box3dBody bodyA,
+    Box3dBody bodyB, {
+    required Box3dFrame frameA,
+    required Box3dFrame frameB,
+    bool collideConnected = false,
+    double? lowerLimit,
+    double? upperLimit,
+    double? motorSpeed,
+    double? maxMotorTorque,
+  }) {
+    final hasLimit = lowerLimit != null && upperLimit != null;
+    final hasMotor = motorSpeed != null && maxMotorTorque != null;
+    return Box3dJoint(
+      _bindings,
+      _bindings.jointRevolute(
+        _handle,
+        bodyA.handle,
+        bodyB.handle,
+        frameA.position,
+        frameA.rotation,
+        frameB.position,
+        frameB.rotation,
+        collideConnected,
+        hasLimit,
+        lowerLimit ?? 0,
+        upperLimit ?? 0,
+        hasMotor,
+        motorSpeed ?? 0,
+        maxMotorTorque ?? 0,
+      ),
+    );
+  }
+
+  /// Creates a prismatic (slider) joint. The slide axis is each frame's
+  /// local +Z direction. Limits are in length units; the motor drives
+  /// linear speed.
+  Box3dJoint createPrismaticJoint(
+    Box3dBody bodyA,
+    Box3dBody bodyB, {
+    required Box3dFrame frameA,
+    required Box3dFrame frameB,
+    bool collideConnected = false,
+    double? lowerLimit,
+    double? upperLimit,
+    double? motorSpeed,
+    double? maxMotorForce,
+  }) {
+    final hasLimit = lowerLimit != null && upperLimit != null;
+    final hasMotor = motorSpeed != null && maxMotorForce != null;
+    return Box3dJoint(
+      _bindings,
+      _bindings.jointPrismatic(
+        _handle,
+        bodyA.handle,
+        bodyB.handle,
+        frameA.position,
+        frameA.rotation,
+        frameB.position,
+        frameB.rotation,
+        collideConnected,
+        hasLimit,
+        lowerLimit ?? 0,
+        upperLimit ?? 0,
+        hasMotor,
+        motorSpeed ?? 0,
+        maxMotorForce ?? 0,
+      ),
+    );
+  }
+
+  /// Creates a spherical (ball-and-socket) joint. Optionally limits the
+  /// swing to [coneAngle] (radians) and the twist to [lowerTwist] ..
+  /// [upperTwist].
+  Box3dJoint createSphericalJoint(
+    Box3dBody bodyA,
+    Box3dBody bodyB, {
+    Box3dFrame? frameA,
+    Box3dFrame? frameB,
+    bool collideConnected = false,
+    double? coneAngle,
+    double? lowerTwist,
+    double? upperTwist,
+    double? maxMotorTorque,
+  }) {
+    final a = frameA ?? Box3dFrame();
+    final b = frameB ?? Box3dFrame();
+    final hasTwist = lowerTwist != null && upperTwist != null;
+    return Box3dJoint(
+      _bindings,
+      _bindings.jointSpherical(
+        _handle,
+        bodyA.handle,
+        bodyB.handle,
+        a.position,
+        a.rotation,
+        b.position,
+        b.rotation,
+        collideConnected,
+        coneAngle != null,
+        coneAngle ?? 0,
+        hasTwist,
+        lowerTwist ?? 0,
+        upperTwist ?? 0,
+        maxMotorTorque != null,
+        maxMotorTorque ?? 0,
+      ),
+    );
+  }
+
+  /// Creates a distance joint holding [bodyA] and [bodyB] a fixed [length]
+  /// apart at the given anchors. Enable a spring for softness, a
+  /// [minLength] .. [maxLength] range, or a motor.
+  Box3dJoint createDistanceJoint(
+    Box3dBody bodyA,
+    Box3dBody bodyB, {
+    required double length,
+    Box3dFrame? frameA,
+    Box3dFrame? frameB,
+    bool collideConnected = false,
+    double? minLength,
+    double? maxLength,
+    double? springHertz,
+    double springDampingRatio = 0,
+    double? motorSpeed,
+    double? maxMotorForce,
+  }) {
+    final a = frameA ?? Box3dFrame();
+    final b = frameB ?? Box3dFrame();
+    final hasLimit = minLength != null && maxLength != null;
+    final hasMotor = motorSpeed != null && maxMotorForce != null;
+    return Box3dJoint(
+      _bindings,
+      _bindings.jointDistance(
+        _handle,
+        bodyA.handle,
+        bodyB.handle,
+        a.position,
+        a.rotation,
+        b.position,
+        b.rotation,
+        collideConnected,
+        length,
+        hasLimit,
+        minLength ?? length,
+        maxLength ?? length,
+        springHertz != null,
+        springHertz ?? 0,
+        springDampingRatio,
+        hasMotor,
+        motorSpeed ?? 0,
+        maxMotorForce ?? 0,
+      ),
+    );
+  }
+
   /// Destroys the world and everything in it.
   void dispose() {
     if (_destroyed) return;

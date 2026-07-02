@@ -202,4 +202,91 @@ abstract class Box3dBindings {
   void shapeEnableSensorEvents(int shape, bool enabled);
   void shapeEnableContactEvents(int shape, bool enabled);
   void shapeDestroy(int shape, bool updateBodyMass);
+
+  // Joints. Each body's local frame is a position plus a rotation; the
+  // revolute/prismatic axis is the frame's local Z axis.
+  int jointWeld(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    double linearHertz,
+    double angularHertz,
+    double linearDamping,
+    double angularDamping,
+  );
+  int jointRevolute(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    bool enableLimit,
+    double lower,
+    double upper,
+    bool enableMotor,
+    double motorSpeed,
+    double maxMotorTorque,
+  );
+  int jointPrismatic(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    bool enableLimit,
+    double lower,
+    double upper,
+    bool enableMotor,
+    double motorSpeed,
+    double maxMotorForce,
+  );
+  int jointSpherical(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    bool enableCone,
+    double coneAngle,
+    bool enableTwist,
+    double lowerTwist,
+    double upperTwist,
+    bool enableMotor,
+    double maxMotorTorque,
+  );
+  int jointDistance(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    double length,
+    bool enableLimit,
+    double minLength,
+    double maxLength,
+    bool enableSpring,
+    double hertz,
+    double dampingRatio,
+    bool enableMotor,
+    double motorSpeed,
+    double maxMotorForce,
+  );
+  void jointDestroy(int joint, bool wakeBodies);
 }

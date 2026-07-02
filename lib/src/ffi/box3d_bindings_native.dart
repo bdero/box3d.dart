@@ -32,6 +32,32 @@ class NativeBox3dBindings extends Box3dBindings {
   // Never freed: the instance lives for the process.
   final Pointer<Float> _read = calloc<Float>(4);
 
+  // Scratch for the two joint local frames (7 floats each: xyz + xyzw).
+  final Pointer<Float> _frameA = calloc<Float>(7);
+  final Pointer<Float> _frameB = calloc<Float>(7);
+
+  void _writeFrames(
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+  ) {
+    _frameA[0] = posA.x;
+    _frameA[1] = posA.y;
+    _frameA[2] = posA.z;
+    _frameA[3] = rotA.x;
+    _frameA[4] = rotA.y;
+    _frameA[5] = rotA.z;
+    _frameA[6] = rotA.w;
+    _frameB[0] = posB.x;
+    _frameB[1] = posB.y;
+    _frameB[2] = posB.z;
+    _frameB[3] = rotB.x;
+    _frameB[4] = rotB.y;
+    _frameB[5] = rotB.z;
+    _frameB[6] = rotB.w;
+  }
+
   @override
   int worldCreate(double gx, double gy, double gz) =>
       native.b3dWorldCreate(gx, gy, gz);
@@ -435,4 +461,184 @@ class NativeBox3dBindings extends Box3dBindings {
   @override
   void shapeDestroy(int shape, bool updateBodyMass) =>
       native.b3dShapeDestroy(shape, updateBodyMass ? 1 : 0);
+
+  @override
+  int jointWeld(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    double linearHertz,
+    double angularHertz,
+    double linearDamping,
+    double angularDamping,
+  ) {
+    _writeFrames(posA, rotA, posB, rotB);
+    return native.b3dJointWeld(
+      world,
+      bodyA,
+      bodyB,
+      _frameA,
+      _frameB,
+      collide ? 1 : 0,
+      linearHertz,
+      angularHertz,
+      linearDamping,
+      angularDamping,
+    );
+  }
+
+  @override
+  int jointRevolute(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    bool enableLimit,
+    double lower,
+    double upper,
+    bool enableMotor,
+    double motorSpeed,
+    double maxMotorTorque,
+  ) {
+    _writeFrames(posA, rotA, posB, rotB);
+    return native.b3dJointRevolute(
+      world,
+      bodyA,
+      bodyB,
+      _frameA,
+      _frameB,
+      collide ? 1 : 0,
+      enableLimit ? 1 : 0,
+      lower,
+      upper,
+      enableMotor ? 1 : 0,
+      motorSpeed,
+      maxMotorTorque,
+    );
+  }
+
+  @override
+  int jointPrismatic(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    bool enableLimit,
+    double lower,
+    double upper,
+    bool enableMotor,
+    double motorSpeed,
+    double maxMotorForce,
+  ) {
+    _writeFrames(posA, rotA, posB, rotB);
+    return native.b3dJointPrismatic(
+      world,
+      bodyA,
+      bodyB,
+      _frameA,
+      _frameB,
+      collide ? 1 : 0,
+      enableLimit ? 1 : 0,
+      lower,
+      upper,
+      enableMotor ? 1 : 0,
+      motorSpeed,
+      maxMotorForce,
+    );
+  }
+
+  @override
+  int jointSpherical(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    bool enableCone,
+    double coneAngle,
+    bool enableTwist,
+    double lowerTwist,
+    double upperTwist,
+    bool enableMotor,
+    double maxMotorTorque,
+  ) {
+    _writeFrames(posA, rotA, posB, rotB);
+    return native.b3dJointSpherical(
+      world,
+      bodyA,
+      bodyB,
+      _frameA,
+      _frameB,
+      collide ? 1 : 0,
+      enableCone ? 1 : 0,
+      coneAngle,
+      enableTwist ? 1 : 0,
+      lowerTwist,
+      upperTwist,
+      enableMotor ? 1 : 0,
+      maxMotorTorque,
+    );
+  }
+
+  @override
+  int jointDistance(
+    int world,
+    int bodyA,
+    int bodyB,
+    Vector3 posA,
+    Quaternion rotA,
+    Vector3 posB,
+    Quaternion rotB,
+    bool collide,
+    double length,
+    bool enableLimit,
+    double minLength,
+    double maxLength,
+    bool enableSpring,
+    double hertz,
+    double dampingRatio,
+    bool enableMotor,
+    double motorSpeed,
+    double maxMotorForce,
+  ) {
+    _writeFrames(posA, rotA, posB, rotB);
+    return native.b3dJointDistance(
+      world,
+      bodyA,
+      bodyB,
+      _frameA,
+      _frameB,
+      collide ? 1 : 0,
+      length,
+      enableLimit ? 1 : 0,
+      minLength,
+      maxLength,
+      enableSpring ? 1 : 0,
+      hertz,
+      dampingRatio,
+      enableMotor ? 1 : 0,
+      motorSpeed,
+      maxMotorForce,
+    );
+  }
+
+  @override
+  void jointDestroy(int joint, bool wakeBodies) =>
+      native.b3dJointDestroy(joint, wakeBodies ? 1 : 0);
 }

@@ -165,6 +165,48 @@ B3D_SHIM_API void b3d_shape_enable_contact_events(uint64_t shape,
                                                   int32_t enabled);
 B3D_SHIM_API void b3d_shape_destroy(uint64_t shape, int32_t update_body_mass);
 
+// --- Joints ----------------------------------------------------------------
+//
+// Joints connect two bodies through a local frame on each. A frame is 7
+// floats: position (x, y, z) then rotation quaternion (x, y, z, w). For a
+// revolute joint the hinge axis is the frame's local Z axis; for a
+// prismatic joint the slide axis is the frame's local Z axis. To anchor to
+// the world, use a static body as one side. All return a packed uint64
+// joint handle.
+
+B3D_SHIM_API uint64_t b3d_joint_weld(uint32_t world, uint64_t body_a,
+                                     uint64_t body_b, const float *frame_a,
+                                     const float *frame_b, int32_t collide,
+                                     float linear_hertz, float angular_hertz,
+                                     float linear_damping,
+                                     float angular_damping);
+
+B3D_SHIM_API uint64_t b3d_joint_revolute(
+    uint32_t world, uint64_t body_a, uint64_t body_b, const float *frame_a,
+    const float *frame_b, int32_t collide, int32_t enable_limit, float lower,
+    float upper, int32_t enable_motor, float motor_speed,
+    float max_motor_torque);
+
+B3D_SHIM_API uint64_t b3d_joint_prismatic(
+    uint32_t world, uint64_t body_a, uint64_t body_b, const float *frame_a,
+    const float *frame_b, int32_t collide, int32_t enable_limit, float lower,
+    float upper, int32_t enable_motor, float motor_speed, float max_motor_force);
+
+B3D_SHIM_API uint64_t b3d_joint_spherical(
+    uint32_t world, uint64_t body_a, uint64_t body_b, const float *frame_a,
+    const float *frame_b, int32_t collide, int32_t enable_cone,
+    float cone_angle, int32_t enable_twist, float lower_twist,
+    float upper_twist, int32_t enable_motor, float max_motor_torque);
+
+B3D_SHIM_API uint64_t b3d_joint_distance(
+    uint32_t world, uint64_t body_a, uint64_t body_b, const float *frame_a,
+    const float *frame_b, int32_t collide, float length, int32_t enable_limit,
+    float min_length, float max_length, int32_t enable_spring, float hertz,
+    float damping_ratio, int32_t enable_motor, float motor_speed,
+    float max_motor_force);
+
+B3D_SHIM_API void b3d_joint_destroy(uint64_t joint, int32_t wake_bodies);
+
 #ifdef __cplusplus
 }
 #endif

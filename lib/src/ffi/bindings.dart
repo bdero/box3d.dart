@@ -379,3 +379,170 @@ external void b3dShapeEnableContactEvents(int shape, int enabled);
 
 @Native<Void Function(Uint64, Int32)>(symbol: 'b3d_shape_destroy')
 external void b3dShapeDestroy(int shape, int updateBodyMass);
+
+// --- Joints ----------------------------------------------------------------
+// frameA / frameB each point at 7 floats: position xyz then rotation xyzw.
+
+@Native<
+  Uint64 Function(
+    Uint32,
+    Uint64,
+    Uint64,
+    Pointer<Float>,
+    Pointer<Float>,
+    Int32,
+    Float,
+    Float,
+    Float,
+    Float,
+  )
+>(symbol: 'b3d_joint_weld')
+external int b3dJointWeld(
+  int world,
+  int bodyA,
+  int bodyB,
+  Pointer<Float> frameA,
+  Pointer<Float> frameB,
+  int collide,
+  double linearHertz,
+  double angularHertz,
+  double linearDamping,
+  double angularDamping,
+);
+
+@Native<
+  Uint64 Function(
+    Uint32,
+    Uint64,
+    Uint64,
+    Pointer<Float>,
+    Pointer<Float>,
+    Int32,
+    Int32,
+    Float,
+    Float,
+    Int32,
+    Float,
+    Float,
+  )
+>(symbol: 'b3d_joint_revolute')
+external int b3dJointRevolute(
+  int world,
+  int bodyA,
+  int bodyB,
+  Pointer<Float> frameA,
+  Pointer<Float> frameB,
+  int collide,
+  int enableLimit,
+  double lower,
+  double upper,
+  int enableMotor,
+  double motorSpeed,
+  double maxMotorTorque,
+);
+
+@Native<
+  Uint64 Function(
+    Uint32,
+    Uint64,
+    Uint64,
+    Pointer<Float>,
+    Pointer<Float>,
+    Int32,
+    Int32,
+    Float,
+    Float,
+    Int32,
+    Float,
+    Float,
+  )
+>(symbol: 'b3d_joint_prismatic')
+external int b3dJointPrismatic(
+  int world,
+  int bodyA,
+  int bodyB,
+  Pointer<Float> frameA,
+  Pointer<Float> frameB,
+  int collide,
+  int enableLimit,
+  double lower,
+  double upper,
+  int enableMotor,
+  double motorSpeed,
+  double maxMotorForce,
+);
+
+@Native<
+  Uint64 Function(
+    Uint32,
+    Uint64,
+    Uint64,
+    Pointer<Float>,
+    Pointer<Float>,
+    Int32,
+    Int32,
+    Float,
+    Int32,
+    Float,
+    Float,
+    Int32,
+    Float,
+  )
+>(symbol: 'b3d_joint_spherical')
+external int b3dJointSpherical(
+  int world,
+  int bodyA,
+  int bodyB,
+  Pointer<Float> frameA,
+  Pointer<Float> frameB,
+  int collide,
+  int enableCone,
+  double coneAngle,
+  int enableTwist,
+  double lowerTwist,
+  double upperTwist,
+  int enableMotor,
+  double maxMotorTorque,
+);
+
+@Native<
+  Uint64 Function(
+    Uint32,
+    Uint64,
+    Uint64,
+    Pointer<Float>,
+    Pointer<Float>,
+    Int32,
+    Float,
+    Int32,
+    Float,
+    Float,
+    Int32,
+    Float,
+    Float,
+    Int32,
+    Float,
+    Float,
+  )
+>(symbol: 'b3d_joint_distance')
+external int b3dJointDistance(
+  int world,
+  int bodyA,
+  int bodyB,
+  Pointer<Float> frameA,
+  Pointer<Float> frameB,
+  int collide,
+  double length,
+  int enableLimit,
+  double minLength,
+  double maxLength,
+  int enableSpring,
+  double hertz,
+  double dampingRatio,
+  int enableMotor,
+  double motorSpeed,
+  double maxMotorForce,
+);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_joint_destroy')
+external void b3dJointDestroy(int joint, int wakeBodies);

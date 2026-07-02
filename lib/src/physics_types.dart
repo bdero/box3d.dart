@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+
+import 'package:vector_math/vector_math.dart';
+
 import 'ffi/box3d_bindings.dart';
 
 /// How a body participates in the simulation.
@@ -86,5 +90,56 @@ class Box3dShape {
     if (_destroyed) return;
     _destroyed = true;
     _bindings.shapeDestroy(handle, updateBodyMass);
+  }
+}
+
+/// A joint's attachment frame on one body: a body-local anchor [position]
+/// and a [rotation]. For revolute and prismatic joints the working axis is
+/// the frame's local +Z direction; use [Box3dFrame.pointAxis] to build a
+/// frame from an anchor and that axis.
+class Box3dFrame {
+  Box3dFrame({Vector3? position, Quaternion? rotation})
+    : position = position ?? Vector3.zero(),
+      rotation = rotation ?? Quaternion.identity();
+
+  /// A frame at [anchor] whose local +Z axis points along [axis].
+  factory Box3dFrame.pointAxis(Vector3 anchor, Vector3 axis) =>
+      Box3dFrame(position: anchor, rotation: _rotationFromZ(axis));
+
+  final Vector3 position;
+  final Quaternion rotation;
+
+  // The shortest rotation taking +Z onto [axis].
+  static Quaternion _rotationFromZ(Vector3 axis) {
+    final a = axis.normalized();
+    final z = Vector3(0, 0, 1);
+    final dot = z.dot(a);
+    if (dot > 0.999999) return Quaternion.identity();
+    if (dot < -0.999999) {
+      return Quaternion.axisAngle(Vector3(1, 0, 0), math.pi);
+    }
+    final cross = z.cross(a)..normalize();
+    return Quaternion.axisAngle(cross, math.acos(dot.clamp(-1.0, 1.0)));
+  }
+}
+
+/// A constraint between two bodies. Create one with the `world.create*Joint`
+/// methods; call [destroy] to remove it.
+class Box3dJoint {
+  /// Constructed by [Box3dWorld]; not part of the public API.
+  Box3dJoint(this._bindings, this.handle);
+
+  final Box3dBindings _bindings;
+
+  /// The packed uint64 joint handle from the shim.
+  final int handle;
+
+  bool _destroyed = false;
+
+  /// Removes this joint. [wakeBodies] wakes the connected bodies.
+  void destroy({bool wakeBodies = true}) {
+    if (_destroyed) return;
+    _destroyed = true;
+    _bindings.jointDestroy(handle, wakeBodies);
   }
 }
