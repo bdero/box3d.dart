@@ -57,14 +57,18 @@ jobs:
       - run: dart test -p chrome test/web_compile_test.dart
 
   wasm:
-    name: Build wasm (emscripten)
+    name: Build wasm + browser runtime test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: mymindstorm/setup-emsdk@v14
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: dev
+      - run: dart pub get
       - name: Build the WebAssembly module
         run: ./tool/build_wasm.sh
       - uses: actions/upload-artifact@v4
@@ -72,3 +76,9 @@ jobs:
           name: box3d_native.wasm
           path: build/wasm/box3d_native.wasm
           if-no-files-found: error
+      # Embed the freshly built module and run box3d in headless Chrome
+      # through the real Dart web backend.
+      - name: Embed module for the browser test
+        run: ./tool/embed_wasm.sh
+      - name: Browser runtime test (Chrome)
+        run: dart test -p chrome test/wasm_runtime_browser_test.dart
