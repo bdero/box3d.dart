@@ -5,6 +5,7 @@ import 'events.dart';
 import 'ffi/box3d_bindings.dart';
 import 'ffi/box3d_bindings_factory.dart';
 import 'physics_types.dart';
+import 'queries.dart';
 
 /// A box3d simulation world: a container of bodies and shapes advanced with
 /// [step].
@@ -273,6 +274,105 @@ class Box3dWorld {
     sensorBegan: _bindings.sensorBegan(_handle),
     sensorEnded: _bindings.sensorEnded(_handle),
   );
+
+  // --- Scene queries ---------------------------------------------------------
+
+  // All category / mask bits set: match everything by default.
+  static const int _allBits = -1;
+
+  /// Casts a ray from [origin] along [direction] up to [maxDistance] and
+  /// returns the closest hit, or null. [category] / [mask] filter which
+  /// shapes are considered.
+  Box3dRayHit? raycast(
+    Vector3 origin,
+    Vector3 direction, {
+    double maxDistance = 1e6,
+    int category = _allBits,
+    int mask = _allBits,
+  }) {
+    final dir = direction.normalized()..scale(maxDistance);
+    return _bindings.raycast(_handle, origin, dir, category, mask);
+  }
+
+  /// Casts a ray and returns every hit along it (unsorted).
+  List<Box3dRayHit> raycastAll(
+    Vector3 origin,
+    Vector3 direction, {
+    double maxDistance = 1e6,
+    int category = _allBits,
+    int mask = _allBits,
+  }) {
+    final dir = direction.normalized()..scale(maxDistance);
+    return _bindings.raycastAll(_handle, origin, dir, category, mask);
+  }
+
+  /// Returns the handles of shapes overlapping a sphere at [center].
+  List<int> overlapSphere(
+    Vector3 center,
+    double radius, {
+    int category = _allBits,
+    int mask = _allBits,
+  }) => _bindings.overlapSphere(_handle, center, radius, category, mask);
+
+  /// Returns the handles of shapes overlapping an oriented box.
+  List<int> overlapBox(
+    Vector3 center,
+    Vector3 halfExtents, {
+    Quaternion? rotation,
+    int category = _allBits,
+    int mask = _allBits,
+  }) => _bindings.overlapBox(
+    _handle,
+    center,
+    halfExtents,
+    rotation ?? Quaternion.identity(),
+    category,
+    mask,
+  );
+
+  /// Sweeps a sphere from [origin] along [direction] up to [maxDistance] and
+  /// returns the closest hit, or null.
+  Box3dRayHit? shapeCastSphere(
+    Vector3 origin,
+    double radius,
+    Vector3 direction, {
+    double maxDistance = 1e6,
+    int category = _allBits,
+    int mask = _allBits,
+  }) {
+    final dir = direction.normalized()..scale(maxDistance);
+    return _bindings.shapeCastSphere(
+      _handle,
+      origin,
+      radius,
+      dir,
+      category,
+      mask,
+    );
+  }
+
+  /// Sweeps an oriented box from [origin] along [direction] and returns the
+  /// closest hit, or null.
+  Box3dRayHit? shapeCastBox(
+    Vector3 origin,
+    Vector3 halfExtents,
+    Vector3 direction, {
+    Quaternion? rotation,
+    double maxDistance = 1e6,
+    int category = _allBits,
+    int mask = _allBits,
+  }) {
+    final dir = direction.normalized()..scale(maxDistance);
+    return _bindings.shapeCastBox(
+      _handle,
+      origin,
+      halfExtents,
+      rotation ?? Quaternion.identity(),
+      dir,
+      category,
+      mask,
+    );
+  }
 
   /// Destroys the world and everything in it.
   void dispose() {

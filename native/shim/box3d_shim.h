@@ -244,6 +244,59 @@ B3D_SHIM_API int32_t b3d_sensor_end_count(uint32_t world);
 B3D_SHIM_API void b3d_sensor_end_at(uint32_t world, int32_t index,
                                     uint64_t *out_shapes);
 
+// --- Scene queries ---------------------------------------------------------
+//
+// Filtering: a query's category must intersect a shape's mask and the
+// shape's category must intersect the query's mask. Pass ~0 for both to hit
+// everything. `dir` is the full ray/cast translation (origin + dir is the
+// end point); a hit's distance is its fraction times the length of dir.
+
+// One query hit: the shape, the world-space hit point and normal, and the
+// fraction of the ray/cast at which it occurred.
+typedef struct {
+  uint64_t shape;
+  float px, py, pz;
+  float nx, ny, nz;
+  float fraction;
+} b3d_query_hit;
+
+// Closest ray hit. Returns 1 and fills `out` on a hit, 0 otherwise.
+B3D_SHIM_API int32_t b3d_raycast_closest(uint32_t world, float ox, float oy,
+                                         float oz, float dx, float dy, float dz,
+                                         uint64_t category, uint64_t mask,
+                                         b3d_query_hit *out);
+
+// All ray hits, collected into an internal buffer. Returns the count; read
+// each with b3d_query_hit_at. The buffer is overwritten by the next query.
+B3D_SHIM_API int32_t b3d_raycast_all(uint32_t world, float ox, float oy,
+                                     float oz, float dx, float dy, float dz,
+                                     uint64_t category, uint64_t mask);
+B3D_SHIM_API void b3d_query_hit_at(int32_t index, b3d_query_hit *out);
+
+// Overlap tests: collect the shapes whose volume intersects the query
+// shape. Return the count; read each handle with b3d_query_shape_at.
+B3D_SHIM_API int32_t b3d_overlap_sphere(uint32_t world, float cx, float cy,
+                                        float cz, float radius,
+                                        uint64_t category, uint64_t mask);
+B3D_SHIM_API int32_t b3d_overlap_box(uint32_t world, float cx, float cy,
+                                     float cz, float hx, float hy, float hz,
+                                     float qx, float qy, float qz, float qw,
+                                     uint64_t category, uint64_t mask);
+B3D_SHIM_API uint64_t b3d_query_shape_at(int32_t index);
+
+// Closest shape-cast hit for a sphere / box swept along `dir`. Returns 1 and
+// fills `out` on a hit, 0 otherwise.
+B3D_SHIM_API int32_t b3d_shapecast_sphere(uint32_t world, float ox, float oy,
+                                          float oz, float radius, float dx,
+                                          float dy, float dz, uint64_t category,
+                                          uint64_t mask, b3d_query_hit *out);
+B3D_SHIM_API int32_t b3d_shapecast_box(uint32_t world, float ox, float oy,
+                                       float oz, float hx, float hy, float hz,
+                                       float qx, float qy, float qz, float qw,
+                                       float dx, float dy, float dz,
+                                       uint64_t category, uint64_t mask,
+                                       b3d_query_hit *out);
+
 #ifdef __cplusplus
 }
 #endif

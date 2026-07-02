@@ -611,6 +611,178 @@ void b3d_sensor_end_at(uint32_t world, int32_t index, uint64_t *out_shapes) {
   out_shapes[1] = b3StoreShapeId(event.visitorShapeId);
 }
 
+// --- Scene queries ---------------------------------------------------------
+//
+// Variable-count query results (all-hits ray casts, overlaps) are collected
+// by box3d callbacks into this reusable buffer, then read out from Dart.
+// Single threaded, so one shared buffer is safe.
+
+static b3d_query_hit *b3d_hits = 0;
+static int32_t b3d_hit_count = 0;
+static int32_t b3d_hit_cap = 0;
+
+static void b3d_hits_reset(void) { b3d_hit_count = 0; }
+
+static void b3d_hits_push(b3d_query_hit hit) {
+  if (b3d_hit_count == b3d_hit_cap) {
+    int32_t cap = b3d_hit_cap ? b3d_hit_cap * 2 : 16;
+    b3d_hits = realloc(b3d_hits, (size_t)cap * sizeof(b3d_query_hit));
+    b3d_hit_cap = cap;
+  }
+  b3d_hits[b3d_hit_count++] = hit;
+}
+
+static b3QueryFilter b3d_filter(uint64_t category, uint64_t mask) {
+  b3QueryFilter filter = {category, mask, 0, 0};
+  return filter;
+}
+
+// Collects every ray/shape-cast hit; returning 1 keeps the query going.
+static float b3d_cast_collect(b3ShapeId shape, b3Pos point, b3Vec3 normal,
+                              float fraction, uint64_t material,
+                              int32_t triangle_index, int32_t child_index,
+                              void *context) {
+  (void)material;
+  (void)triangle_index;
+  (void)child_index;
+  (void)context;
+  b3d_query_hit hit;
+  hit.shape = b3StoreShapeId(shape);
+  hit.px = (float)point.x;
+  hit.py = (float)point.y;
+  hit.pz = (float)point.z;
+  hit.nx = normal.x;
+  hit.ny = normal.y;
+  hit.nz = normal.z;
+  hit.fraction = fraction;
+  b3d_hits_push(hit);
+  return 1.0f;
+}
+
+// Collects every overlapping shape; returning true keeps the query going.
+static bool b3d_overlap_collect(b3ShapeId shape, void *context) {
+  (void)context;
+  b3d_query_hit hit = {b3StoreShapeId(shape), 0, 0, 0, 0, 0, 0, 0};
+  b3d_hits_push(hit);
+  return true;
+}
+
+int32_t b3d_raycast_closest(uint32_t world, float ox, float oy, float oz,
+                            float dx, float dy, float dz, uint64_t category,
+                            uint64_t mask, b3d_query_hit *out) {
+  b3RayResult result = b3World_CastRayClosest(
+      b3LoadWorldId(world), (b3Pos){ox, oy, oz}, (b3Vec3){dx, dy, dz},
+      b3d_filter(category, mask));
+  if (!result.hit) {
+    return 0;
+  }
+  out->shape = b3StoreShapeId(result.shapeId);
+  out->px = (float)result.point.x;
+  out->py = (float)result.point.y;
+  out->pz = (float)result.point.z;
+  out->nx = result.normal.x;
+  out->ny = result.normal.y;
+  out->nz = result.normal.z;
+  out->fraction = result.fraction;
+  return 1;
+}
+
+int32_t b3d_raycast_all(uint32_t world, float ox, float oy, float oz, float dx,
+                        float dy, float dz, uint64_t category, uint64_t mask) {
+  b3d_hits_reset();
+  b3World_CastRay(b3LoadWorldId(world), (b3Pos){ox, oy, oz},
+                  (b3Vec3){dx, dy, dz}, b3d_filter(category, mask),
+                  b3d_cast_collect, 0);
+  return b3d_hit_count;
+}
+
+void b3d_query_hit_at(int32_t index, b3d_query_hit *out) {
+  *out = b3d_hits[index];
+}
+
+uint64_t b3d_query_shape_at(int32_t index) { return b3d_hits[index].shape; }
+
+int32_t b3d_overlap_sphere(uint32_t world, float cx, float cy, float cz,
+                           float radius, uint64_t category, uint64_t mask) {
+  b3d_hits_reset();
+  b3Vec3 center = {0, 0, 0};
+  b3ShapeProxy proxy = {&center, 1, radius};
+  b3World_OverlapShape(b3LoadWorldId(world), (b3Pos){cx, cy, cz}, &proxy,
+                       b3d_filter(category, mask), b3d_overlap_collect, 0);
+  return b3d_hit_count;
+}
+
+// Builds the eight corner points of a box (half extents hx/hy/hz) rotated by
+// the quaternion, relative to the box center. Radius 0 makes a sharp box.
+static void b3d_box_proxy_points(float hx, float hy, float hz, float qx,
+                                 float qy, float qz, float qw, b3Vec3 *out8) {
+  b3Quat q = {{qx, qy, qz}, qw};
+  int32_t i = 0;
+  for (int32_t sx = -1; sx <= 1; sx += 2) {
+    for (int32_t sy = -1; sy <= 1; sy += 2) {
+      for (int32_t sz = -1; sz <= 1; sz += 2) {
+        b3Vec3 corner = {sx * hx, sy * hy, sz * hz};
+        out8[i++] = b3RotateVector(q, corner);
+      }
+    }
+  }
+}
+
+int32_t b3d_overlap_box(uint32_t world, float cx, float cy, float cz, float hx,
+                        float hy, float hz, float qx, float qy, float qz,
+                        float qw, uint64_t category, uint64_t mask) {
+  b3d_hits_reset();
+  b3Vec3 points[8];
+  b3d_box_proxy_points(hx, hy, hz, qx, qy, qz, qw, points);
+  b3ShapeProxy proxy = {points, 8, 0.0f};
+  b3World_OverlapShape(b3LoadWorldId(world), (b3Pos){cx, cy, cz}, &proxy,
+                       b3d_filter(category, mask), b3d_overlap_collect, 0);
+  return b3d_hit_count;
+}
+
+// Runs a shape cast, returning the closest of the collected hits.
+static int32_t b3d_shapecast_closest(uint32_t world, b3Pos origin,
+                                     const b3ShapeProxy *proxy,
+                                     b3Vec3 translation, uint64_t category,
+                                     uint64_t mask, b3d_query_hit *out) {
+  b3d_hits_reset();
+  b3World_CastShape(b3LoadWorldId(world), origin, proxy, translation,
+                    b3d_filter(category, mask), b3d_cast_collect, 0);
+  if (b3d_hit_count == 0) {
+    return 0;
+  }
+  int32_t best = 0;
+  for (int32_t i = 1; i < b3d_hit_count; i++) {
+    if (b3d_hits[i].fraction < b3d_hits[best].fraction) {
+      best = i;
+    }
+  }
+  *out = b3d_hits[best];
+  return 1;
+}
+
+int32_t b3d_shapecast_sphere(uint32_t world, float ox, float oy, float oz,
+                             float radius, float dx, float dy, float dz,
+                             uint64_t category, uint64_t mask,
+                             b3d_query_hit *out) {
+  b3Vec3 center = {0, 0, 0};
+  b3ShapeProxy proxy = {&center, 1, radius};
+  return b3d_shapecast_closest(world, (b3Pos){ox, oy, oz}, &proxy,
+                               (b3Vec3){dx, dy, dz}, category, mask, out);
+}
+
+int32_t b3d_shapecast_box(uint32_t world, float ox, float oy, float oz,
+                          float hx, float hy, float hz, float qx, float qy,
+                          float qz, float qw, float dx, float dy, float dz,
+                          uint64_t category, uint64_t mask,
+                          b3d_query_hit *out) {
+  b3Vec3 points[8];
+  b3d_box_proxy_points(hx, hy, hz, qx, qy, qz, qw, points);
+  b3ShapeProxy proxy = {points, 8, 0.0f};
+  return b3d_shapecast_closest(world, (b3Pos){ox, oy, oz}, &proxy,
+                               (b3Vec3){dx, dy, dz}, category, mask, out);
+}
+
 uint64_t b3d_shape_height_field(uint64_t body, int32_t count_x, int32_t count_z,
                                 const float *heights, float scale_x,
                                 float scale_y, float scale_z, float friction,

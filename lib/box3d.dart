@@ -9,5 +9,6 @@ export 'src/body.dart';
 export 'src/box3d_base.dart';
 export 'src/events.dart';
 export 'src/physics_types.dart';
+export 'src/queries.dart';
 export 'src/version.dart';
 export 'src/world.dart';

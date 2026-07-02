@@ -610,3 +610,199 @@ external int b3dSensorEndCount(int world);
   symbol: 'b3d_sensor_end_at',
 )
 external void b3dSensorEndAt(int world, int index, Pointer<Uint64> outShapes);
+
+// --- Scene queries ---------------------------------------------------------
+
+/// Layout matches `b3d_query_hit` in the shim header.
+final class B3dQueryHit extends Struct {
+  @Uint64()
+  external int shape;
+  @Float()
+  external double px;
+  @Float()
+  external double py;
+  @Float()
+  external double pz;
+  @Float()
+  external double nx;
+  @Float()
+  external double ny;
+  @Float()
+  external double nz;
+  @Float()
+  external double fraction;
+}
+
+@Native<
+  Int32 Function(
+    Uint32,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Uint64,
+    Uint64,
+    Pointer<B3dQueryHit>,
+  )
+>(symbol: 'b3d_raycast_closest')
+external int b3dRaycastClosest(
+  int world,
+  double ox,
+  double oy,
+  double oz,
+  double dx,
+  double dy,
+  double dz,
+  int category,
+  int mask,
+  Pointer<B3dQueryHit> out,
+);
+
+@Native<
+  Int32 Function(
+    Uint32,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Uint64,
+    Uint64,
+  )
+>(symbol: 'b3d_raycast_all')
+external int b3dRaycastAll(
+  int world,
+  double ox,
+  double oy,
+  double oz,
+  double dx,
+  double dy,
+  double dz,
+  int category,
+  int mask,
+);
+
+@Native<Void Function(Int32, Pointer<B3dQueryHit>)>(symbol: 'b3d_query_hit_at')
+external void b3dQueryHitAt(int index, Pointer<B3dQueryHit> out);
+
+@Native<Int32 Function(Uint32, Float, Float, Float, Float, Uint64, Uint64)>(
+  symbol: 'b3d_overlap_sphere',
+)
+external int b3dOverlapSphere(
+  int world,
+  double cx,
+  double cy,
+  double cz,
+  double radius,
+  int category,
+  int mask,
+);
+
+@Native<
+  Int32 Function(
+    Uint32,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Uint64,
+    Uint64,
+  )
+>(symbol: 'b3d_overlap_box')
+external int b3dOverlapBox(
+  int world,
+  double cx,
+  double cy,
+  double cz,
+  double hx,
+  double hy,
+  double hz,
+  double qx,
+  double qy,
+  double qz,
+  double qw,
+  int category,
+  int mask,
+);
+
+@Native<Uint64 Function(Int32)>(symbol: 'b3d_query_shape_at')
+external int b3dQueryShapeAt(int index);
+
+@Native<
+  Int32 Function(
+    Uint32,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Uint64,
+    Uint64,
+    Pointer<B3dQueryHit>,
+  )
+>(symbol: 'b3d_shapecast_sphere')
+external int b3dShapecastSphere(
+  int world,
+  double ox,
+  double oy,
+  double oz,
+  double radius,
+  double dx,
+  double dy,
+  double dz,
+  int category,
+  int mask,
+  Pointer<B3dQueryHit> out,
+);
+
+@Native<
+  Int32 Function(
+    Uint32,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Float,
+    Uint64,
+    Uint64,
+    Pointer<B3dQueryHit>,
+  )
+>(symbol: 'b3d_shapecast_box')
+external int b3dShapecastBox(
+  int world,
+  double ox,
+  double oy,
+  double oz,
+  double hx,
+  double hy,
+  double hz,
+  double qx,
+  double qy,
+  double qz,
+  double qw,
+  double dx,
+  double dy,
+  double dz,
+  int category,
+  int mask,
+  Pointer<B3dQueryHit> out,
+);

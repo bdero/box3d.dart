@@ -9,6 +9,7 @@ import 'package:ffi/ffi.dart';
 import 'package:vector_math/vector_math.dart';
 
 import '../events.dart';
+import '../queries.dart';
 import 'bindings.dart' as native;
 import 'box3d_bindings.dart';
 
@@ -41,6 +42,19 @@ class NativeBox3dBindings extends Box3dBindings {
   final Pointer<Uint64> _shapes = calloc<Uint64>(2);
   final Pointer<native.B3dContactPoint> _point =
       calloc<native.B3dContactPoint>();
+
+  // Scratch for a single query hit.
+  final Pointer<native.B3dQueryHit> _hit = calloc<native.B3dQueryHit>();
+
+  Box3dRayHit _rayHitFrom(native.B3dQueryHit h, double dirLength) {
+    return Box3dRayHit(
+      shape: h.shape,
+      point: Vector3(h.px, h.py, h.pz),
+      normal: Vector3(h.nx, h.ny, h.nz),
+      fraction: h.fraction,
+      distance: h.fraction * dirLength,
+    );
+  }
 
   void _writeFrames(
     Vector3 posA,
@@ -713,5 +727,154 @@ class NativeBox3dBindings extends Box3dBindings {
       );
     }
     return events;
+  }
+
+  @override
+  Box3dRayHit? raycast(int world, Vector3 origin, Vector3 dir, int c, int m) {
+    final hit = native.b3dRaycastClosest(
+      world,
+      origin.x,
+      origin.y,
+      origin.z,
+      dir.x,
+      dir.y,
+      dir.z,
+      c,
+      m,
+      _hit,
+    );
+    return hit == 0 ? null : _rayHitFrom(_hit.ref, dir.length);
+  }
+
+  @override
+  List<Box3dRayHit> raycastAll(
+    int world,
+    Vector3 origin,
+    Vector3 dir,
+    int c,
+    int m,
+  ) {
+    final count = native.b3dRaycastAll(
+      world,
+      origin.x,
+      origin.y,
+      origin.z,
+      dir.x,
+      dir.y,
+      dir.z,
+      c,
+      m,
+    );
+    final length = dir.length;
+    final hits = <Box3dRayHit>[];
+    for (var i = 0; i < count; i++) {
+      native.b3dQueryHitAt(i, _hit);
+      hits.add(_rayHitFrom(_hit.ref, length));
+    }
+    return hits;
+  }
+
+  @override
+  List<int> overlapSphere(
+    int world,
+    Vector3 center,
+    double radius,
+    int c,
+    int m,
+  ) {
+    final count = native.b3dOverlapSphere(
+      world,
+      center.x,
+      center.y,
+      center.z,
+      radius,
+      c,
+      m,
+    );
+    return [for (var i = 0; i < count; i++) native.b3dQueryShapeAt(i)];
+  }
+
+  @override
+  List<int> overlapBox(
+    int world,
+    Vector3 center,
+    Vector3 halfExtents,
+    Quaternion rotation,
+    int c,
+    int m,
+  ) {
+    final count = native.b3dOverlapBox(
+      world,
+      center.x,
+      center.y,
+      center.z,
+      halfExtents.x,
+      halfExtents.y,
+      halfExtents.z,
+      rotation.x,
+      rotation.y,
+      rotation.z,
+      rotation.w,
+      c,
+      m,
+    );
+    return [for (var i = 0; i < count; i++) native.b3dQueryShapeAt(i)];
+  }
+
+  @override
+  Box3dRayHit? shapeCastSphere(
+    int world,
+    Vector3 origin,
+    double radius,
+    Vector3 dir,
+    int c,
+    int m,
+  ) {
+    final hit = native.b3dShapecastSphere(
+      world,
+      origin.x,
+      origin.y,
+      origin.z,
+      radius,
+      dir.x,
+      dir.y,
+      dir.z,
+      c,
+      m,
+      _hit,
+    );
+    return hit == 0 ? null : _rayHitFrom(_hit.ref, dir.length);
+  }
+
+  @override
+  Box3dRayHit? shapeCastBox(
+    int world,
+    Vector3 origin,
+    Vector3 halfExtents,
+    Quaternion rotation,
+    Vector3 dir,
+    int c,
+    int m,
+  ) {
+    final hit = native.b3dShapecastBox(
+      world,
+      origin.x,
+      origin.y,
+      origin.z,
+      halfExtents.x,
+      halfExtents.y,
+      halfExtents.z,
+      rotation.x,
+      rotation.y,
+      rotation.z,
+      rotation.w,
+      dir.x,
+      dir.y,
+      dir.z,
+      c,
+      m,
+      _hit,
+    );
+    return hit == 0 ? null : _rayHitFrom(_hit.ref, dir.length);
   }
 }

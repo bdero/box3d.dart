@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:vector_math/vector_math.dart';
 
 import '../events.dart';
+import '../queries.dart';
 
 /// Body-kind bytes shared with the shim's C ABI (match b3BodyType).
 const int bodyKindStatic = 0;
@@ -297,4 +298,47 @@ abstract class Box3dBindings {
   List<Box3dContactEnded> contactEnded(int world);
   List<Box3dSensorBegan> sensorBegan(int world);
   List<Box3dSensorEnded> sensorEnded(int world);
+
+  // Scene queries. `dir` is the full cast translation. category/mask are the
+  // query filter bits.
+  Box3dRayHit? raycast(int world, Vector3 origin, Vector3 dir, int c, int m);
+  List<Box3dRayHit> raycastAll(
+    int world,
+    Vector3 origin,
+    Vector3 dir,
+    int c,
+    int m,
+  );
+  List<int> overlapSphere(
+    int world,
+    Vector3 center,
+    double radius,
+    int c,
+    int m,
+  );
+  List<int> overlapBox(
+    int world,
+    Vector3 center,
+    Vector3 halfExtents,
+    Quaternion rotation,
+    int c,
+    int m,
+  );
+  Box3dRayHit? shapeCastSphere(
+    int world,
+    Vector3 origin,
+    double radius,
+    Vector3 dir,
+    int c,
+    int m,
+  );
+  Box3dRayHit? shapeCastBox(
+    int world,
+    Vector3 origin,
+    Vector3 halfExtents,
+    Quaternion rotation,
+    Vector3 dir,
+    int c,
+    int m,
+  );
 }
