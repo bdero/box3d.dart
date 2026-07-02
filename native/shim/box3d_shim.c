@@ -69,6 +69,23 @@ void b3d_body_get_rotation(uint64_t body, float *out4) {
   out4[3] = q.s;
 }
 
+void b3d_body_get_transform(uint64_t body, float *out7) {
+  b3WorldTransform t = b3Body_GetTransform(b3LoadBodyId(body));
+  out7[0] = (float)t.p.x;
+  out7[1] = (float)t.p.y;
+  out7[2] = (float)t.p.z;
+  out7[3] = t.q.v.x;
+  out7[4] = t.q.v.y;
+  out7[5] = t.q.v.z;
+  out7[6] = t.q.s;
+}
+
+void b3d_body_set_transform(uint64_t body, float px, float py, float pz,
+                            float qx, float qy, float qz, float qw) {
+  b3Body_SetTransform(b3LoadBodyId(body), (b3Pos){px, py, pz},
+                      (b3Quat){{qx, qy, qz}, qw});
+}
+
 void b3d_body_get_linear_velocity(uint64_t body, float *out3) {
   b3Vec3 v = b3Body_GetLinearVelocity(b3LoadBodyId(body));
   out3[0] = v.x;
@@ -78,6 +95,101 @@ void b3d_body_get_linear_velocity(uint64_t body, float *out3) {
 
 void b3d_body_set_linear_velocity(uint64_t body, float x, float y, float z) {
   b3Body_SetLinearVelocity(b3LoadBodyId(body), (b3Vec3){x, y, z});
+}
+
+void b3d_body_get_angular_velocity(uint64_t body, float *out3) {
+  b3Vec3 v = b3Body_GetAngularVelocity(b3LoadBodyId(body));
+  out3[0] = v.x;
+  out3[1] = v.y;
+  out3[2] = v.z;
+}
+
+void b3d_body_set_angular_velocity(uint64_t body, float x, float y, float z) {
+  b3Body_SetAngularVelocity(b3LoadBodyId(body), (b3Vec3){x, y, z});
+}
+
+void b3d_body_set_linear_damping(uint64_t body, float damping) {
+  b3Body_SetLinearDamping(b3LoadBodyId(body), damping);
+}
+
+void b3d_body_set_angular_damping(uint64_t body, float damping) {
+  b3Body_SetAngularDamping(b3LoadBodyId(body), damping);
+}
+
+void b3d_body_set_gravity_scale(uint64_t body, float scale) {
+  b3Body_SetGravityScale(b3LoadBodyId(body), scale);
+}
+
+int32_t b3d_body_get_kind(uint64_t body) {
+  return (int32_t)b3Body_GetType(b3LoadBodyId(body));
+}
+
+void b3d_body_set_kind(uint64_t body, int32_t kind) {
+  b3Body_SetType(b3LoadBodyId(body), (b3BodyType)kind);
+}
+
+float b3d_body_get_mass(uint64_t body) {
+  return b3Body_GetMass(b3LoadBodyId(body));
+}
+
+void b3d_body_apply_mass_from_shapes(uint64_t body) {
+  b3Body_ApplyMassFromShapes(b3LoadBodyId(body));
+}
+
+void b3d_body_set_motion_locks(uint64_t body, int32_t lx, int32_t ly,
+                               int32_t lz, int32_t ax, int32_t ay, int32_t az) {
+  b3MotionLocks locks = {lx != 0, ly != 0, lz != 0, ax != 0, ay != 0, az != 0};
+  b3Body_SetMotionLocks(b3LoadBodyId(body), locks);
+}
+
+void b3d_body_set_bullet(uint64_t body, int32_t enabled) {
+  b3Body_SetBullet(b3LoadBodyId(body), enabled != 0);
+}
+
+int32_t b3d_body_is_awake(uint64_t body) {
+  return b3Body_IsAwake(b3LoadBodyId(body)) ? 1 : 0;
+}
+
+void b3d_body_set_awake(uint64_t body, int32_t awake) {
+  b3Body_SetAwake(b3LoadBodyId(body), awake != 0);
+}
+
+void b3d_body_enable_sleep(uint64_t body, int32_t enabled) {
+  b3Body_EnableSleep(b3LoadBodyId(body), enabled != 0);
+}
+
+void b3d_body_apply_force(uint64_t body, float fx, float fy, float fz,
+                          int32_t has_point, float px, float py, float pz,
+                          int32_t wake) {
+  b3BodyId id = b3LoadBodyId(body);
+  b3Vec3 force = {fx, fy, fz};
+  if (has_point) {
+    b3Body_ApplyForce(id, force, (b3Pos){px, py, pz}, wake != 0);
+  } else {
+    b3Body_ApplyForceToCenter(id, force, wake != 0);
+  }
+}
+
+void b3d_body_apply_impulse(uint64_t body, float ix, float iy, float iz,
+                            int32_t has_point, float px, float py, float pz,
+                            int32_t wake) {
+  b3BodyId id = b3LoadBodyId(body);
+  b3Vec3 impulse = {ix, iy, iz};
+  if (has_point) {
+    b3Body_ApplyLinearImpulse(id, impulse, (b3Pos){px, py, pz}, wake != 0);
+  } else {
+    b3Body_ApplyLinearImpulseToCenter(id, impulse, wake != 0);
+  }
+}
+
+void b3d_body_apply_torque(uint64_t body, float x, float y, float z,
+                           int32_t wake) {
+  b3Body_ApplyTorque(b3LoadBodyId(body), (b3Vec3){x, y, z}, wake != 0);
+}
+
+void b3d_body_apply_angular_impulse(uint64_t body, float x, float y, float z,
+                                    int32_t wake) {
+  b3Body_ApplyAngularImpulse(b3LoadBodyId(body), (b3Vec3){x, y, z}, wake != 0);
 }
 
 // --- Shapes ----------------------------------------------------------------

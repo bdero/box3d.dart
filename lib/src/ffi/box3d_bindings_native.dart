@@ -75,6 +75,18 @@ class NativeBox3dBindings extends Box3dBindings {
   }
 
   @override
+  void bodySetTransform(
+    int body,
+    double px,
+    double py,
+    double pz,
+    double qx,
+    double qy,
+    double qz,
+    double qw,
+  ) => native.b3dBodySetTransform(body, px, py, pz, qx, qy, qz, qw);
+
+  @override
   Vector3 bodyLinearVelocity(int body) {
     native.b3dBodyGetLinearVelocity(body, _read);
     return Vector3(_read[0], _read[1], _read[2]);
@@ -83,6 +95,134 @@ class NativeBox3dBindings extends Box3dBindings {
   @override
   void bodySetLinearVelocity(int body, double x, double y, double z) =>
       native.b3dBodySetLinearVelocity(body, x, y, z);
+
+  @override
+  Vector3 bodyAngularVelocity(int body) {
+    native.b3dBodyGetAngularVelocity(body, _read);
+    return Vector3(_read[0], _read[1], _read[2]);
+  }
+
+  @override
+  void bodySetAngularVelocity(int body, double x, double y, double z) =>
+      native.b3dBodySetAngularVelocity(body, x, y, z);
+
+  @override
+  void bodySetLinearDamping(int body, double damping) =>
+      native.b3dBodySetLinearDamping(body, damping);
+
+  @override
+  void bodySetAngularDamping(int body, double damping) =>
+      native.b3dBodySetAngularDamping(body, damping);
+
+  @override
+  void bodySetGravityScale(int body, double scale) =>
+      native.b3dBodySetGravityScale(body, scale);
+
+  @override
+  int bodyKind(int body) => native.b3dBodyGetKind(body);
+
+  @override
+  void bodySetKind(int body, int kind) => native.b3dBodySetKind(body, kind);
+
+  @override
+  double bodyMass(int body) => native.b3dBodyGetMass(body);
+
+  @override
+  void bodyApplyMassFromShapes(int body) =>
+      native.b3dBodyApplyMassFromShapes(body);
+
+  @override
+  void bodySetMotionLocks(
+    int body,
+    bool lx,
+    bool ly,
+    bool lz,
+    bool ax,
+    bool ay,
+    bool az,
+  ) => native.b3dBodySetMotionLocks(
+    body,
+    lx ? 1 : 0,
+    ly ? 1 : 0,
+    lz ? 1 : 0,
+    ax ? 1 : 0,
+    ay ? 1 : 0,
+    az ? 1 : 0,
+  );
+
+  @override
+  void bodySetBullet(int body, bool enabled) =>
+      native.b3dBodySetBullet(body, enabled ? 1 : 0);
+
+  @override
+  bool bodyIsAwake(int body) => native.b3dBodyIsAwake(body) != 0;
+
+  @override
+  void bodySetAwake(int body, bool awake) =>
+      native.b3dBodySetAwake(body, awake ? 1 : 0);
+
+  @override
+  void bodyEnableSleep(int body, bool enabled) =>
+      native.b3dBodyEnableSleep(body, enabled ? 1 : 0);
+
+  @override
+  void bodyApplyForce(
+    int body,
+    double fx,
+    double fy,
+    double fz,
+    bool hasPoint,
+    double px,
+    double py,
+    double pz,
+    bool wake,
+  ) => native.b3dBodyApplyForce(
+    body,
+    fx,
+    fy,
+    fz,
+    hasPoint ? 1 : 0,
+    px,
+    py,
+    pz,
+    wake ? 1 : 0,
+  );
+
+  @override
+  void bodyApplyImpulse(
+    int body,
+    double ix,
+    double iy,
+    double iz,
+    bool hasPoint,
+    double px,
+    double py,
+    double pz,
+    bool wake,
+  ) => native.b3dBodyApplyImpulse(
+    body,
+    ix,
+    iy,
+    iz,
+    hasPoint ? 1 : 0,
+    px,
+    py,
+    pz,
+    wake ? 1 : 0,
+  );
+
+  @override
+  void bodyApplyTorque(int body, double x, double y, double z, bool wake) =>
+      native.b3dBodyApplyTorque(body, x, y, z, wake ? 1 : 0);
+
+  @override
+  void bodyApplyAngularImpulse(
+    int body,
+    double x,
+    double y,
+    double z,
+    bool wake,
+  ) => native.b3dBodyApplyAngularImpulse(body, x, y, z, wake ? 1 : 0);
 
   @override
   int shapeSphere(

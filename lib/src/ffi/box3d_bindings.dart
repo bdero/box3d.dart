@@ -40,8 +40,70 @@ abstract class Box3dBindings {
   void bodyDestroy(int body);
   Vector3 bodyPosition(int body);
   Quaternion bodyRotation(int body);
+  void bodySetTransform(
+    int body,
+    double px,
+    double py,
+    double pz,
+    double qx,
+    double qy,
+    double qz,
+    double qw,
+  );
   Vector3 bodyLinearVelocity(int body);
   void bodySetLinearVelocity(int body, double x, double y, double z);
+  Vector3 bodyAngularVelocity(int body);
+  void bodySetAngularVelocity(int body, double x, double y, double z);
+  void bodySetLinearDamping(int body, double damping);
+  void bodySetAngularDamping(int body, double damping);
+  void bodySetGravityScale(int body, double scale);
+  int bodyKind(int body);
+  void bodySetKind(int body, int kind);
+  double bodyMass(int body);
+  void bodyApplyMassFromShapes(int body);
+  void bodySetMotionLocks(
+    int body,
+    bool lx,
+    bool ly,
+    bool lz,
+    bool ax,
+    bool ay,
+    bool az,
+  );
+  void bodySetBullet(int body, bool enabled);
+  bool bodyIsAwake(int body);
+  void bodySetAwake(int body, bool awake);
+  void bodyEnableSleep(int body, bool enabled);
+  void bodyApplyForce(
+    int body,
+    double fx,
+    double fy,
+    double fz,
+    bool hasPoint,
+    double px,
+    double py,
+    double pz,
+    bool wake,
+  );
+  void bodyApplyImpulse(
+    int body,
+    double ix,
+    double iy,
+    double iz,
+    bool hasPoint,
+    double px,
+    double py,
+    double pz,
+    bool wake,
+  );
+  void bodyApplyTorque(int body, double x, double y, double z, bool wake);
+  void bodyApplyAngularImpulse(
+    int body,
+    double x,
+    double y,
+    double z,
+    bool wake,
+  );
 
   // Shapes.
   int shapeSphere(

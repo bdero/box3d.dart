@@ -68,6 +68,23 @@ external void b3dBodyGetPosition(int body, Pointer<Float> out3);
 @Native<Void Function(Uint64, Pointer<Float>)>(symbol: 'b3d_body_get_rotation')
 external void b3dBodyGetRotation(int body, Pointer<Float> out4);
 
+@Native<Void Function(Uint64, Pointer<Float>)>(symbol: 'b3d_body_get_transform')
+external void b3dBodyGetTransform(int body, Pointer<Float> out7);
+
+@Native<Void Function(Uint64, Float, Float, Float, Float, Float, Float, Float)>(
+  symbol: 'b3d_body_set_transform',
+)
+external void b3dBodySetTransform(
+  int body,
+  double px,
+  double py,
+  double pz,
+  double qx,
+  double qy,
+  double qz,
+  double qw,
+);
+
 @Native<Void Function(Uint64, Pointer<Float>)>(
   symbol: 'b3d_body_get_linear_velocity',
 )
@@ -77,6 +94,114 @@ external void b3dBodyGetLinearVelocity(int body, Pointer<Float> out3);
   symbol: 'b3d_body_set_linear_velocity',
 )
 external void b3dBodySetLinearVelocity(int body, double x, double y, double z);
+
+@Native<Void Function(Uint64, Pointer<Float>)>(
+  symbol: 'b3d_body_get_angular_velocity',
+)
+external void b3dBodyGetAngularVelocity(int body, Pointer<Float> out3);
+
+@Native<Void Function(Uint64, Float, Float, Float)>(
+  symbol: 'b3d_body_set_angular_velocity',
+)
+external void b3dBodySetAngularVelocity(int body, double x, double y, double z);
+
+@Native<Void Function(Uint64, Float)>(symbol: 'b3d_body_set_linear_damping')
+external void b3dBodySetLinearDamping(int body, double damping);
+
+@Native<Void Function(Uint64, Float)>(symbol: 'b3d_body_set_angular_damping')
+external void b3dBodySetAngularDamping(int body, double damping);
+
+@Native<Void Function(Uint64, Float)>(symbol: 'b3d_body_set_gravity_scale')
+external void b3dBodySetGravityScale(int body, double scale);
+
+@Native<Int32 Function(Uint64)>(symbol: 'b3d_body_get_kind')
+external int b3dBodyGetKind(int body);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_body_set_kind')
+external void b3dBodySetKind(int body, int kind);
+
+@Native<Float Function(Uint64)>(symbol: 'b3d_body_get_mass')
+external double b3dBodyGetMass(int body);
+
+@Native<Void Function(Uint64)>(symbol: 'b3d_body_apply_mass_from_shapes')
+external void b3dBodyApplyMassFromShapes(int body);
+
+@Native<Void Function(Uint64, Int32, Int32, Int32, Int32, Int32, Int32)>(
+  symbol: 'b3d_body_set_motion_locks',
+)
+external void b3dBodySetMotionLocks(
+  int body,
+  int lx,
+  int ly,
+  int lz,
+  int ax,
+  int ay,
+  int az,
+);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_body_set_bullet')
+external void b3dBodySetBullet(int body, int enabled);
+
+@Native<Int32 Function(Uint64)>(symbol: 'b3d_body_is_awake')
+external int b3dBodyIsAwake(int body);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_body_set_awake')
+external void b3dBodySetAwake(int body, int awake);
+
+@Native<Void Function(Uint64, Int32)>(symbol: 'b3d_body_enable_sleep')
+external void b3dBodyEnableSleep(int body, int enabled);
+
+@Native<
+  Void Function(Uint64, Float, Float, Float, Int32, Float, Float, Float, Int32)
+>(symbol: 'b3d_body_apply_force')
+external void b3dBodyApplyForce(
+  int body,
+  double fx,
+  double fy,
+  double fz,
+  int hasPoint,
+  double px,
+  double py,
+  double pz,
+  int wake,
+);
+
+@Native<
+  Void Function(Uint64, Float, Float, Float, Int32, Float, Float, Float, Int32)
+>(symbol: 'b3d_body_apply_impulse')
+external void b3dBodyApplyImpulse(
+  int body,
+  double ix,
+  double iy,
+  double iz,
+  int hasPoint,
+  double px,
+  double py,
+  double pz,
+  int wake,
+);
+
+@Native<Void Function(Uint64, Float, Float, Float, Int32)>(
+  symbol: 'b3d_body_apply_torque',
+)
+external void b3dBodyApplyTorque(
+  int body,
+  double x,
+  double y,
+  double z,
+  int wake,
+);
+
+@Native<Void Function(Uint64, Float, Float, Float, Int32)>(
+  symbol: 'b3d_body_apply_angular_impulse',
+)
+external void b3dBodyApplyAngularImpulse(
+  int body,
+  double x,
+  double y,
+  double z,
+  int wake,
+);
 
 // --- Shapes ----------------------------------------------------------------
 
