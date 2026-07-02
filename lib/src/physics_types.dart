@@ -94,31 +94,46 @@ class Box3dShape {
 }
 
 /// A joint's attachment frame on one body: a body-local anchor [position]
-/// and a [rotation]. For revolute and prismatic joints the working axis is
-/// the frame's local +Z direction; use [Box3dFrame.pointAxis] to build a
-/// frame from an anchor and that axis.
+/// and a [rotation].
+///
+/// Different joints read the working axis from a different local frame axis:
+/// a revolute joint hinges about the frame's local +Z ([Box3dFrame.pointAxis]),
+/// while a prismatic joint slides along the frame's local +X
+/// ([Box3dFrame.pointAxisX]).
 class Box3dFrame {
   Box3dFrame({Vector3? position, Quaternion? rotation})
     : position = position ?? Vector3.zero(),
       rotation = rotation ?? Quaternion.identity();
 
-  /// A frame at [anchor] whose local +Z axis points along [axis].
+  /// A frame at [anchor] whose local +Z axis points along [axis]. Use for a
+  /// revolute joint's hinge axis.
   factory Box3dFrame.pointAxis(Vector3 anchor, Vector3 axis) =>
-      Box3dFrame(position: anchor, rotation: _rotationFromZ(axis));
+      Box3dFrame(position: anchor, rotation: _rotationBetween(_z, axis));
+
+  /// A frame at [anchor] whose local +X axis points along [axis]. Use for a
+  /// prismatic joint's slide axis.
+  factory Box3dFrame.pointAxisX(Vector3 anchor, Vector3 axis) =>
+      Box3dFrame(position: anchor, rotation: _rotationBetween(_x, axis));
 
   final Vector3 position;
   final Quaternion rotation;
 
-  // The shortest rotation taking +Z onto [axis].
-  static Quaternion _rotationFromZ(Vector3 axis) {
-    final a = axis.normalized();
-    final z = Vector3(0, 0, 1);
-    final dot = z.dot(a);
+  static final Vector3 _x = Vector3(1, 0, 0);
+  static final Vector3 _z = Vector3(0, 0, 1);
+
+  // The shortest rotation taking unit vector [from] onto [to].
+  static Quaternion _rotationBetween(Vector3 from, Vector3 to) {
+    final a = to.normalized();
+    final dot = from.dot(a);
     if (dot > 0.999999) return Quaternion.identity();
     if (dot < -0.999999) {
-      return Quaternion.axisAngle(Vector3(1, 0, 0), math.pi);
+      // Antiparallel: rotate 180 degrees about any perpendicular axis.
+      final perp = (from.x.abs() < 0.9 ? Vector3(1, 0, 0) : Vector3(0, 1, 0))
+        ..cross(from)
+        ..normalize();
+      return Quaternion.axisAngle(perp, math.pi);
     }
-    final cross = z.cross(a)..normalize();
+    final cross = from.cross(a)..normalize();
     return Quaternion.axisAngle(cross, math.acos(dot.clamp(-1.0, 1.0)));
   }
 }

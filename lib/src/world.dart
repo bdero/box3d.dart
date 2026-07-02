@@ -141,8 +141,8 @@ class Box3dWorld {
   }
 
   /// Creates a prismatic (slider) joint. The slide axis is each frame's
-  /// local +Z direction. Limits are in length units; the motor drives
-  /// linear speed.
+  /// local +X direction (see [Box3dFrame.pointAxisX]). Limits are in length
+  /// units; the motor drives linear speed.
   Box3dJoint createPrismaticJoint(
     Box3dBody bodyA,
     Box3dBody bodyB, {

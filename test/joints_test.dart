@@ -72,6 +72,31 @@ void main() {
     expect(arm.position.y, lessThan(0.0));
   });
 
+  test('a prismatic joint confines motion to its slide axis', () {
+    final ground = anchor();
+    final body = world.createBody(position: Vector3(0, 0, 0));
+    body.addBox(Vector3.all(0.5));
+
+    // Slide along Y, anchored to the world, limited to [-2, 0].
+    world.createPrismaticJoint(
+      ground,
+      body,
+      frameA: Box3dFrame.pointAxisX(Vector3(0, 0, 0), Vector3(0, 1, 0)),
+      frameB: Box3dFrame.pointAxisX(Vector3(0, 0, 0), Vector3(0, 1, 0)),
+      lowerLimit: -2,
+      upperLimit: 0,
+    );
+
+    for (var i = 0; i < 300; i++) {
+      world.step(1 / 60);
+    }
+    final p = body.position;
+    expect(p.x, closeTo(0, 0.05));
+    expect(p.z, closeTo(0, 0.05));
+    // Falls along Y to the lower limit.
+    expect(p.y, closeTo(-2, 0.15));
+  });
+
   test('a spherical joint acts as a ball-and-socket pendulum', () {
     final ground = anchor();
     final bob = world.createBody(position: Vector3(0, -2, 0));
