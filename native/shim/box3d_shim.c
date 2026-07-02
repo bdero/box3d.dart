@@ -146,7 +146,15 @@ uint64_t b3d_body_create(uint32_t world, int32_t kind, float px, float py,
   return b3StoreBodyId(body);
 }
 
-void b3d_body_destroy(uint64_t body) { b3DestroyBody(b3LoadBodyId(body)); }
+void b3d_body_destroy(uint64_t body) {
+  // Guard against a stale handle: destroying a world, or another body this
+  // one is jointed to, can already have freed it. box3d would crash on a
+  // double free otherwise.
+  b3BodyId id = b3LoadBodyId(body);
+  if (b3Body_IsValid(id)) {
+    b3DestroyBody(id);
+  }
+}
 
 void b3d_body_get_position(uint64_t body, float *out3) {
   b3Pos p = b3Body_GetPosition(b3LoadBodyId(body));
@@ -388,7 +396,14 @@ void b3d_shape_enable_contact_events(uint64_t shape, int32_t enabled) {
 }
 
 void b3d_shape_destroy(uint64_t shape, int32_t update_body_mass) {
-  b3DestroyShape(b3LoadShapeId(shape), update_body_mass != 0);
+  // Destroying a body cascades to its shapes, so this shape may already be
+  // gone; skip the box3d call on a stale handle to avoid a double free. Still
+  // release any mesh/height-field blob we own for it (box3d never freed that,
+  // it only referenced it).
+  b3ShapeId id = b3LoadShapeId(shape);
+  if (b3Shape_IsValid(id)) {
+    b3DestroyShape(id, update_body_mass != 0);
+  }
   b3d_owned_remove_shape(shape);
 }
 
@@ -528,7 +543,12 @@ uint64_t b3d_joint_distance(uint32_t world, uint64_t body_a, uint64_t body_b,
 }
 
 void b3d_joint_destroy(uint64_t joint, int32_t wake_bodies) {
-  b3DestroyJoint(b3LoadJointId(joint), wake_bodies != 0);
+  // Destroying a connected body cascades to its joints, so guard against a
+  // stale handle.
+  b3JointId id = b3LoadJointId(joint);
+  if (b3Joint_IsValid(id)) {
+    b3DestroyJoint(id, wake_bodies != 0);
+  }
 }
 
 // --- Events ----------------------------------------------------------------
