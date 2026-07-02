@@ -1,0 +1,6 @@
+# box3d keeps its worlds in a process-global array (b3_worlds in the native
+# library), so two test suites running concurrently in separate isolates of
+# the same process race on that shared state and can crash. Run suites one at
+# a time. This mirrors the real constraint: a process should drive box3d from
+# a single isolate.
+concurrency: 1

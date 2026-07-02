@@ -89,15 +89,32 @@ static void b3d_owned_free_world(uint32_t world) {
 
 // --- World -----------------------------------------------------------------
 
+// Runs a task immediately on the calling thread and returns null, which
+// tells box3d the work completed serially (finishTask is not called).
+static void *b3d_enqueue_task_inline(b3TaskCallback *task, void *task_context,
+                                     void *user_context, const char *task_name) {
+  (void)user_context;
+  (void)task_name;
+  task(task_context);
+  return 0;
+}
+
+static void b3d_finish_task_noop(void *user_task, void *user_context) {
+  (void)user_task;
+  (void)user_context;
+}
+
 uint32_t b3d_world_create(float gx, float gy, float gz) {
   b3WorldDef def = b3DefaultWorldDef();
   def.gravity = (b3Vec3){gx, gy, gz};
-  // Single-threaded: run every task inline on the calling thread. No task
-  // callbacks and a worker count of 1 keep box3d off its internal thread
-  // pool, which the web build cannot use and which we want deterministic.
+  // Fully single-threaded: provide task callbacks that execute inline rather
+  // than leaving them null. A null task system makes box3d spin up its own
+  // internal threaded scheduler, whose process-global state is neither
+  // deterministic nor safe across the parallel isolates a test run uses, and
+  // it cannot exist in the web build at all.
   def.workerCount = 1;
-  def.enqueueTask = 0;
-  def.finishTask = 0;
+  def.enqueueTask = b3d_enqueue_task_inline;
+  def.finishTask = b3d_finish_task_noop;
   b3WorldId world = b3CreateWorld(&def);
   return b3StoreWorldId(world);
 }
