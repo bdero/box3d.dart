@@ -31,6 +31,13 @@ extern "C" {
 // this shim assumes). Used as a build-time sanity check from Dart.
 B3D_SHIM_API int32_t b3d_is_double_precision(void);
 
+// Linear-memory allocation, used by the WebAssembly backend to marshal
+// argument and result buffers through the module's own heap. On native the
+// Dart side allocates with dart:ffi and never calls these, but exporting
+// them keeps a single ABI across both backends.
+B3D_SHIM_API void *b3d_alloc(int32_t byte_count);
+B3D_SHIM_API void b3d_free(void *pointer);
+
 // --- World -----------------------------------------------------------------
 
 // Creates a single-threaded world with the given gravity and returns its

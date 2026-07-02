@@ -5,8 +5,10 @@
   no separate toolchain is needed. Exposes an idiomatic Dart API: worlds,
   rigid bodies, the sphere/box/capsule/cylinder/convex-hull/triangle-mesh/
   height-field shapes, weld/revolute/prismatic/spherical/distance joints,
-  contact and sensor events, and raycast/overlap/shape-cast queries. Native
-  platforms only for now; the web (WebAssembly) backend is not built yet.
+  contact and sensor events, and raycast/overlap/shape-cast queries. A web
+  (WebAssembly) backend is included: build the module with tool/build_wasm.sh
+  and serve it during development with --dart-define=BOX3D_WASM_URL=<url>. A
+  hosted module for released versions is pending.
 
 ## 0.0.1
 

@@ -39,3 +39,36 @@ jobs:
 
       - name: Test
         run: dart test
+
+  web:
+    name: Web compile (Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: dev
+      - run: dart pub get
+      # Compiles the js_interop web backend and runs it in headless Chrome;
+      # a stray dart:ffi import on the web path would fail this.
+      - run: dart test -p chrome test/web_compile_test.dart
+
+  wasm:
+    name: Build wasm (emscripten)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: mymindstorm/setup-emsdk@v14
+      - name: Build the WebAssembly module
+        run: ./tool/build_wasm.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: box3d_native.wasm
+          path: build/wasm/box3d_native.wasm
+          if-no-files-found: error

@@ -18,6 +18,10 @@
 
 int32_t b3d_is_double_precision(void) { return b3IsDoublePrecision() ? 1 : 0; }
 
+void *b3d_alloc(int32_t byte_count) { return malloc((size_t)byte_count); }
+
+void b3d_free(void *pointer) { free(pointer); }
+
 // ---------------------------------------------------------------------------
 // Owned-geometry registry
 //
