@@ -12,15 +12,16 @@
 /// headers a browser fetch needs, so releases serve the module through a
 /// CORS proxy; set this to that proxy's base URL. The full URL is
 /// `$wasmReleaseBaseUrl/$wasmReleaseTag/$wasmFileName`.
-const String wasmReleaseBaseUrl = '';
+const String wasmReleaseBaseUrl = 'https://box3d-wasm.x-eaa.workers.dev';
 
 /// The release tag the module is attached to (e.g. `box3d-0.1.0`). Empty
 /// until the first web release.
-const String wasmReleaseTag = '';
+const String wasmReleaseTag = 'box3d-0.1.0';
 
 /// File name of the module within the release.
 const String wasmFileName = 'box3d_native.wasm';
 
 /// Lower-case hex sha256 of the released module, verified after download.
 /// Empty until the first web release.
-const String wasmSha256 = '';
+const String wasmSha256 =
+    'eb42cadeea6c0dd00707e400bba682e26d4be8103d4505d6cdcf792cfa39608f';

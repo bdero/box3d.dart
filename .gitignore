@@ -3,3 +3,6 @@
 .packages
 pubspec.lock
 build/
+
+# wrangler local cache (may contain the Cloudflare account id)
+tool/wasm_cors_proxy/.wrangler/
