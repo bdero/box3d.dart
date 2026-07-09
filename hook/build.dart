@@ -11,6 +11,7 @@
 
 import 'dart:io';
 
+import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 
@@ -33,6 +34,11 @@ Future<void> main(List<String> args) async {
       name: _assetName,
       assetName: _assetName,
       sources: sources,
+      libraries: librariesForTargetOsName(input.config.code.targetOS.name),
+      defines: definesForTarget(
+        input.config.code.targetOS.name,
+        input.config.code.targetArchitecture.name,
+      ),
       includes: const [
         _box3dInclude,
         // box3d's own sources include their sibling headers by bare name
@@ -46,6 +52,21 @@ Future<void> main(List<String> args) async {
     await builder.run(input: input, output: output);
   });
 }
+
+List<String> librariesForTargetOsName(String targetOsName) => switch (
+  targetOsName
+) {
+  'android' || 'linux' => const ['m'],
+  _ => const [],
+};
+
+Map<String, String?> definesForTarget(
+  String targetOsName,
+  String targetArchitectureName,
+) =>
+    targetOsName == 'android' && targetArchitectureName == 'arm'
+    ? const {'BOX3D_DISABLE_SIMD': null}
+    : const {};
 
 // Every .c file under the vendored box3d src directory, as package-root
 // relative paths. Globbed rather than hard-coded so a submodule bump that
@@ -61,3 +82,5 @@ List<String> _box3dSources(BuildInput input) {
       .toList()
     ..sort();
 }
+
+
