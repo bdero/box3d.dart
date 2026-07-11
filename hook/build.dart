@@ -27,7 +27,10 @@ const _shimSrc = 'native/shim/box3d_shim.c';
 
 Future<void> main(List<String> args) async {
   await build(args, (input, output) async {
-    // CBuilder.run itself skips when the build does not want code assets.
+    if (!input.config.buildCodeAssets) {
+      return;
+    }
+
     final sources = <String>[..._box3dSources(input), _shimSrc];
 
     final builder = CBuilder.library(
