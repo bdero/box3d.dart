@@ -17,3 +17,9 @@ native/box3d/build.sh
 native/box3d/build_vs2026.bat
 native/box3d/deploy_docs.sh
 native/box3d/README.md
+
+# This file replaces .gitignore for pub rather than stacking with it, so
+# gitignored paths have to be repeated here. Without this, a local wasm
+# build leaks into the archive; the web backend downloads its module from
+# the release, so a packaged copy is dead weight.
+build/
