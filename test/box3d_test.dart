@@ -1,8 +1,17 @@
+import 'dart:io';
+
 import 'package:box3d/box3d.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('exposes a bindings version', () {
-    expect(box3dBindingsVersion, isNotEmpty);
+  test('reports the pubspec version', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final version = RegExp(
+      r'^version:\s*(\S+)',
+      multiLine: true,
+    ).firstMatch(pubspec)?.group(1);
+
+    expect(version, isNotNull, reason: 'no version in pubspec.yaml');
+    expect(box3dBindingsVersion, version);
   });
 }

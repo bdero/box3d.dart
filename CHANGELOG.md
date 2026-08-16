@@ -1,3 +1,13 @@
+## 0.1.1
+
+- Link libm explicitly on Android and Linux, fixing a `dlopen` failure on
+  unresolved `sinf` when the native library is loaded on Android.
+- Use box3d's scalar path on 32-bit arm, whose NEON path needs intrinsics
+  that only exist on AArch64.
+- Skip the native build when a hook invocation asks only for data assets.
+- Report the real package version from `box3dBindingsVersion`, which had
+  been left at 0.0.1.
+
 ## 0.1.0
 
 - First functional release. Vendors box3d (pinned to its v0.1.0) and builds
