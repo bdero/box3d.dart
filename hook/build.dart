@@ -17,10 +17,10 @@ import 'package:native_toolchain_c/native_toolchain_c.dart';
 
 const _assetName = 'box3d_native';
 
-// box3d requires C17. Its sources are self-contained (only libm on Unix)
-// and select precision / SIMD through compile-time macros that default,
-// with no defines, to single precision and native SIMD, which is what we
-// want for the native build.
+// box3d requires C17. Its sources are self-contained apart from libm on
+// Unix, and select precision / SIMD through compile-time macros that
+// default to single precision and native SIMD. librariesForTarget and
+// definesForTarget cover the targets where those defaults need help.
 const _box3dSrc = 'native/box3d/src';
 const _box3dInclude = 'native/box3d/include';
 const _shimSrc = 'native/shim/box3d_shim.c';
@@ -37,11 +37,8 @@ Future<void> main(List<String> args) async {
       name: _assetName,
       assetName: _assetName,
       sources: sources,
-      libraries: librariesForTargetOsName(input.config.code.targetOS.name),
-      defines: definesForTarget(
-        input.config.code.targetOS.name,
-        input.config.code.targetArchitecture.name,
-      ),
+      libraries: librariesForTarget(input.config.code.targetOS),
+      defines: definesForTarget(input.config.code.targetArchitecture),
       includes: const [
         _box3dInclude,
         // box3d's own sources include their sibling headers by bare name
@@ -56,18 +53,18 @@ Future<void> main(List<String> args) async {
   });
 }
 
-List<String> librariesForTargetOsName(String targetOsName) => switch (
-  targetOsName
-) {
-  'android' || 'linux' => const ['m'],
-  _ => const [],
-};
+// box3d calls libm (sinf, sqrtf). Apple folds it into libSystem and Windows
+// into the CRT, but the remaining Unix targets have to name it. box3d's own
+// CMake links it there; compiling the sources through this hook bypasses
+// that, so an unnamed libm only surfaces as an unresolved symbol at dlopen.
+List<String> librariesForTarget(OS targetOS) =>
+    targetOS == OS.android || targetOS == OS.linux ? const ['m'] : const [];
 
-Map<String, String?> definesForTarget(
-  String targetOsName,
-  String targetArchitectureName,
-) =>
-    targetOsName == 'android' && targetArchitectureName == 'arm'
+// box3d picks its NEON path for every arm CPU, but that path uses intrinsics
+// that exist only on AArch64 (vdivq_f32, vsqrtq_f32, vminvq_u32), so 32-bit
+// arm takes the scalar path instead.
+Map<String, String?> definesForTarget(Architecture targetArchitecture) =>
+    targetArchitecture == Architecture.arm
     ? const {'BOX3D_DISABLE_SIMD': null}
     : const {};
 
@@ -85,5 +82,3 @@ List<String> _box3dSources(BuildInput input) {
       .toList()
     ..sort();
 }
-
-
