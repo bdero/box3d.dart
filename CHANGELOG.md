@@ -1,3 +1,8 @@
+## 0.1.2
+
+- Allow `code_assets` 2.x.
+- Keep local wasm builds out of the published archive.
+
 ## 0.1.1
 
 - Link libm explicitly on Android and Linux, fixing a `dlopen` failure on
